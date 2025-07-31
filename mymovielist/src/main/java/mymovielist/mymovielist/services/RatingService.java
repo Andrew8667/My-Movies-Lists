@@ -1,0 +1,48 @@
+package mymovielist.mymovielist.services;
+
+import mymovielist.mymovielist.auth.JwtUtil;
+import mymovielist.mymovielist.dto.RatingRequest;
+import mymovielist.mymovielist.entities.Movie;
+import mymovielist.mymovielist.entities.Rating;
+import mymovielist.mymovielist.entities.User;
+import mymovielist.mymovielist.keys.RatingKey;
+import mymovielist.mymovielist.repositories.MovieRepository;
+import mymovielist.mymovielist.repositories.RatingRepository;
+import mymovielist.mymovielist.repositories.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.Optional;
+
+@Service
+public class RatingService {
+    @Autowired
+    private RatingRepository ratingRepository;
+    @Autowired
+    private JwtUtil jwtUtil;
+    @Autowired
+    private MovieRepository movieRepository;
+    @Autowired
+    private UserRepository userRepository;
+    public ResponseEntity<String> addRating(RatingRequest rating, String authHeader){
+        Rating newRating = new Rating();
+        String email = jwtUtil.extractUsername(authHeader.substring(7));
+        Optional<User> user = userRepository.findById(email);
+        Optional<Movie> movie = movieRepository.findByTitle(rating.getTitle());
+        newRating.setDescription(rating.getDescription());
+        newRating.setRating(rating.getRating());
+        if(user.isPresent() && movie.isPresent()){
+            newRating.setMovie(movie.get());
+            newRating.setUser(user.get());
+            RatingKey ratingKey = new RatingKey(user.get().getEmail(),movie.get().getId());
+            System.out.println(ratingKey.getEmail());
+            System.out.println(ratingKey.getId());
+            newRating.setRatingKey(ratingKey);
+        }
+
+        ratingRepository.save(newRating);
+        return ResponseEntity.ok("Added rating successfully");
+    }
+}
