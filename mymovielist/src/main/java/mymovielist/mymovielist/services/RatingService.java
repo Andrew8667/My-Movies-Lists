@@ -1,7 +1,11 @@
 package mymovielist.mymovielist.services;
 
 import mymovielist.mymovielist.auth.JwtUtil;
+import mymovielist.mymovielist.dto.CategoryMovieRatingDTO;
+import mymovielist.mymovielist.dto.MovieDTO;
+import mymovielist.mymovielist.dto.RatingDTO;
 import mymovielist.mymovielist.dto.RatingRequest;
+import mymovielist.mymovielist.entities.Category;
 import mymovielist.mymovielist.entities.Movie;
 import mymovielist.mymovielist.entities.Rating;
 import mymovielist.mymovielist.entities.User;
@@ -14,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import javax.swing.text.html.Option;
 import java.util.Optional;
 
 @Service
@@ -44,5 +49,13 @@ public class RatingService {
 
         ratingRepository.save(newRating);
         return ResponseEntity.ok("Added rating successfully");
+    }
+
+    public void populateCategoryMovieReviewDTO(MovieDTO movieDTO, Movie movie, User user){
+        Optional<Rating> rating = ratingRepository.findByUserAndMovie(user,movie);
+        if(rating.isPresent()){
+            RatingDTO ratingDTO = new RatingDTO(rating.get().getRating(),rating.get().getDescription());
+            movieDTO.setRating(ratingDTO);
+        }
     }
 }

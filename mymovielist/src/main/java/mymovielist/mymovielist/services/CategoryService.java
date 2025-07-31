@@ -2,6 +2,7 @@ package mymovielist.mymovielist.services;
 
 import mymovielist.mymovielist.auth.JwtUtil;
 import mymovielist.mymovielist.dto.CategoryDTO;
+import mymovielist.mymovielist.dto.CategoryMovieRatingDTO;
 import mymovielist.mymovielist.dto.CategoryRequest;
 import mymovielist.mymovielist.repositories.UserRepository;
 import org.apache.coyote.Response;
@@ -25,6 +26,8 @@ public class CategoryService {
     private JwtUtil jwtUtil;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private MovieService movieService;
 
     public ResponseEntity<String> createCategory(String title, String description, String authHeader){
         String token = authHeader.substring(7);
@@ -50,6 +53,26 @@ public class CategoryService {
             returnCategories.add(categoryDTO);
         }
         return ResponseEntity.ok(returnCategories);
+    }
+
+    public ResponseEntity<List<CategoryMovieRatingDTO>> getUserCategories(String authHeader){
+        String email = jwtUtil.extractUsername(authHeader.substring(7)); //extract email from the token
+        Optional<User> user = userRepository.findById(email);
+        if(!user.isPresent()){
+            return ResponseEntity.badRequest().body(null);
+        }
+        List<Category> categories = categoryRepository.findAllByUser(user.get());
+        List<CategoryMovieRatingDTO> categoryMovieRatingDTOS = new ArrayList<>();
+        for(int i = 0 ; i< categories.size() ; i++){
+            CategoryMovieRatingDTO categoryMovieRatingDTO = new CategoryMovieRatingDTO();
+            categoryMovieRatingDTO.setId(categories.get(i).getId());
+            categoryMovieRatingDTO.setTitle(categories.get(i).getTitle());
+            categoryMovieRatingDTO.setDescription(categories.get(i).getDescription());
+            categoryMovieRatingDTO.setMovies(new ArrayList<>());
+            movieService.populateCategoryMovieReviewDTO(categoryMovieRatingDTO.getMovies(),categories.get(i),user.get());
+            categoryMovieRatingDTOS.add(categoryMovieRatingDTO);
+        }
+        return ResponseEntity.ok(categoryMovieRatingDTOS);
     }
 
     public ResponseEntity<CategoryDTO> getCategory(Long id){

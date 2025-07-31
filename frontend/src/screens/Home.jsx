@@ -38,7 +38,6 @@ const Home = function Home() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
-  const date= new Date().toISOString().split("T")[0];
 
   useEffect(() => {
     axios
@@ -66,7 +65,6 @@ const Home = function Home() {
     axios.post('http://localhost:8080/movie/add',{
       "title":movie.Title,
       "img":movie.Poster,
-      "date":date,
       "category":parseInt(selectedCategory)
     },{
       headers:{
@@ -292,14 +290,6 @@ const Home = function Home() {
                 <Typography sx={{ fontWeight: 600, fontSize: 24 }}>
                   {movie.Title} {movie.Year}
                 </Typography>
-              </Box>
-              <Box>
-                <TextField
-                  type={"date"}
-                  value={date}
-                  disabled
-                  required
-                ></TextField>
               </Box>
               <Box
                 sx={{

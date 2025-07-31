@@ -14,7 +14,9 @@ import {
   ListItemText,
   ListItemButton,
   Modal,
+  Popover,
 } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useNavigation } from "react-router-dom";
@@ -24,35 +26,39 @@ const Lists = function Lists() {
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [newListName,setNewListName] = useState('');
-  const [description,setDescription] = useState('');
-  const [categories,setCategories] = useState([])
+  const [newListName, setNewListName] = useState("");
+  const [description, setDescription] = useState("");
+  const [categoriesMoviesRatings, setCategoriesMoviesRatings] = useState([]);
+  const [infoAnchorEl, setInfoAnchorEl] = useState(null);
 
-  useEffect(()=>{
-    axios.get('http://localhost:8080/category/getAll',{
-        headers:{
-            "Authorization":`Bearer ${localStorage.getItem('token')}`
-        }
-    })
-    .then(response=>{
-        console.log(response.data)
-        setCategories(response.data)
-    })
-    .catch(error=>console.log(error))
-  },[])
+  useEffect(() => {
+    axios
+      .get("http://localhost:8080/category/getUserCategories", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((response) => setCategoriesMoviesRatings(response.data))
+      .catch((error) => console.log(error));
+  }, []);
 
-  const createList = ()=>{
-    axios.post('http://localhost:8080/category/create',{
-        "title":newListName,
-        "description": description
-    },{
-        headers:{
-            "Authorization":`Bearer ${localStorage.getItem('token')}`
+  const createList = () => {
+    axios
+      .post(
+        "http://localhost:8080/category/create",
+        {
+          title: newListName,
+          description: description,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-    })
-    .then(response=>console.log(response))
-    .catch(error=>console.log(error))
-  }
+      )
+      .then((response) => console.log(response))
+      .catch((error) => console.log(error));
+  };
   return (
     <Container maxWidth={false}>
       <AppBar
@@ -118,46 +124,118 @@ const Lists = function Lists() {
           </ListItemButton>
         </Box>
       </Drawer>
-      <Box sx={{display:'flex',flexDirection:'column'}}>
+      <Box sx={{ display: "flex", flexDirection: "column" }}>
         <Button
           variant="contained"
           onClick={() => setCreateModalOpen(true)}
-          sx={{ backgroundColor: "#db0000" }}
+          sx={{ backgroundColor: "#db0000", width: 200 }}
         >
           Create new list
         </Button>
-        {categories.map(category=>{
-            return(
-                <Box sx={{backgroundColor:'blue'}}>
-                    <Typography>{category.name}</Typography>
+        <Box sx={{ width: "100vw", height: 100, marginTop: 10 }}>
+          {Array.isArray(categoriesMoviesRatings) &&
+            categoriesMoviesRatings.map((item) => (
+              <Box
+                key={item.id}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography key={item.id} sx={{ color: "#FFFFFF" }}>
+                    {item.title}
+                  </Typography>
+                  <IconButton onClick={(e) => setInfoAnchorEl(e.currentTarget)}>
+                    <InfoIcon color="primary"></InfoIcon>
+                  </IconButton>
+                  <Popover
+                    open={infoAnchorEl ? true : false}
+                    anchorEl={infoAnchorEl}
+                    onClose={() => setInfoAnchorEl(false)}
+                    anchorOrigin={{
+                      vertical: "top",
+                      horizontal: "right",
+                    }}
+                  >
+                    <Typography>{item.description}</Typography>
+                  </Popover>
                 </Box>
-            )
-        }
-            )}
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "row",
+                    justifyContent: "flex-start",
+                    width: "100vw",
+                    height: 150,
+                  }}
+                >
+                  {Array.isArray(item.movies) &&
+                    item.movies.map((movie) => (
+                      <Box sx={{width:'100px',height:'100%',marginRight:2,borderRadius:2,overflow:'hidden'}}>
+                        <img
+                          key={movie.id}
+                          src={movie.img}
+                          height="100%"
+                          width="100%"
+                        ></img>
+                      </Box>
+                    ))}
+                </Box>
+              </Box>
+            ))}
+        </Box>
       </Box>
       <Modal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
         sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
       >
-        <Box sx={{display:'flex',justifyContent:'center',alignItems:'center'}}>
-          <Box sx={{display:'flex',justifyContent:'center',alignItems:'center'}}>
-          <TextField
-            label="New list name"
-            variant="outlined"
-            sx={{ backgroundColor: "#564d4d" }}
-            onChange={(e)=>{
-                setNewListName(e.target.value)
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
-          ></TextField>
-          <Button variant="contained" sx={{backgroundColor:'#db0000'}} onClick={createList}>Create</Button>
+          >
+            <TextField
+              label="New list name"
+              variant="outlined"
+              sx={{ backgroundColor: "#564d4d" }}
+              onChange={(e) => {
+                setNewListName(e.target.value);
+              }}
+            ></TextField>
+            <Button
+              variant="contained"
+              sx={{ backgroundColor: "#db0000" }}
+              onClick={createList}
+            >
+              Create
+            </Button>
           </Box>
           <TextField
             label="Description"
             variant="outlined"
-            sx={{ backgroundColor: "#564d4d", height:100,width:100}}
-            onChange={(e)=>{
-                setDescription(e.target.value)
+            sx={{ backgroundColor: "#564d4d", height: 100, width: 100 }}
+            onChange={(e) => {
+              setDescription(e.target.value);
             }}
           ></TextField>
         </Box>

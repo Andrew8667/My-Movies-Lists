@@ -1,7 +1,9 @@
 package mymovielist.mymovielist.controllers;
 
 import mymovielist.mymovielist.dto.CategoryDTO;
+import mymovielist.mymovielist.dto.CategoryMovieRatingDTO;
 import mymovielist.mymovielist.dto.CategoryRequest;
+import mymovielist.mymovielist.entities.Category;
 import mymovielist.mymovielist.repositories.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,11 @@ public class CategoryController {
     @GetMapping("/getAll")
     public ResponseEntity<List<CategoryDTO>> getCategories(){
         return categoryService.getCategories();
+    }
+
+    @GetMapping("getUserCategories")
+    public ResponseEntity<List<CategoryMovieRatingDTO>> getUserCategories(@RequestHeader("Authorization") String authHeader){
+        return categoryService.getUserCategories(authHeader);
     }
 
     @GetMapping("/get/{id}")

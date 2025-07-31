@@ -1,8 +1,12 @@
 package mymovielist.mymovielist.services;
 
+import mymovielist.mymovielist.dto.CategoryMovieRatingDTO;
 import mymovielist.mymovielist.dto.MovieCategoryRequest;
+import mymovielist.mymovielist.dto.MovieDTO;
+import mymovielist.mymovielist.dto.RatingDTO;
 import mymovielist.mymovielist.entities.Category;
 import mymovielist.mymovielist.entities.Movie;
+import mymovielist.mymovielist.entities.User;
 import mymovielist.mymovielist.repositories.CategoryRepository;
 import mymovielist.mymovielist.repositories.MovieRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +23,8 @@ public class MovieService {
     private MovieRepository movieRepository;
     @Autowired
     private CategoryRepository categoryRepository;
+    @Autowired
+    private RatingService ratingService;
     public ResponseEntity<String> addMovieCategory(MovieCategoryRequest movie){
         Optional<Movie> curMovie = movieRepository.findByTitle(movie.getTitle());
         if(!curMovie.isPresent()){ //movie hasn't been added
@@ -44,5 +50,15 @@ public class MovieService {
             }
         }
         return ResponseEntity.ok("The movie is already in the category");
+    }
+
+    public void populateCategoryMovieReviewDTO(List<MovieDTO> movieDTOS, Category category, User user){
+        List<Movie> movies = movieRepository.findAllByCategories(category);
+        for(int i = 0 ; i < movies.size() ; i++){
+            Movie movie = movies.get(i);
+            MovieDTO movieDTO = new MovieDTO(movie.getId(),movie.getImg(),movie.getTitle(), new RatingDTO());
+            ratingService.populateCategoryMovieReviewDTO(movieDTO,movie,user);
+            movieDTOS.add(movieDTO);
+        }
     }
 }
