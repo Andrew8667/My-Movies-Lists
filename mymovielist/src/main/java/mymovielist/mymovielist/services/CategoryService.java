@@ -7,6 +7,7 @@ import mymovielist.mymovielist.dto.CategoryRequest;
 import mymovielist.mymovielist.repositories.UserRepository;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -29,19 +30,27 @@ public class CategoryService {
     @Autowired
     private MovieService movieService;
 
-    public ResponseEntity<String> createCategory(String title, String description, String authHeader){
+    /**
+     * Creates a new category
+     * @param categoryRequest contains the title and description of the new category
+     * @param authHeader contains jwt token
+     * @return response entity with the newly created category, null if it can't be created
+     */
+    public ResponseEntity<Category> createCategory(CategoryRequest categoryRequest, String authHeader){
         String token = authHeader.substring(7);
         String email = jwtUtil.extractUsername(token);
         Optional<User> user = userRepository.findById(email);
         if(user.isPresent()){
-            Category category = new Category();
-            category.setTitle(title);
-            category.setUser(user.get());
-            category.setDescription(description);
-            categoryRepository.save(category);
-            return ResponseEntity.ok("Category successfully created");
+            //check if category title already exists for user
+            if(!categoryRepository.existsByTitleAndUser(categoryRequest.getTitle(),user.get())){
+                Category category = new Category();
+                category.setTitle(categoryRequest.getTitle());
+                category.setUser(user.get());
+                category.setDescription(categoryRequest.getDescription());
+                return ResponseEntity.ok(categoryRepository.save(category));
+            }
         }
-        return ResponseEntity.badRequest().body("Could not create category");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
     }
 
     public ResponseEntity<List<CategoryDTO>> getCategories(){
@@ -55,11 +64,17 @@ public class CategoryService {
         return ResponseEntity.ok(returnCategories);
     }
 
+    /**
+     * Gets the user's categories, the movies inside the categories, and the ratings for those movies
+     * @param authHeader contains the jwt token
+     * @return the user's categories, the movies inside the categories, and the ratings for those movies in dictionary format
+     * null otherwise
+     */
     public ResponseEntity<List<CategoryMovieRatingDTO>> getUserCategories(String authHeader){
         String email = jwtUtil.extractUsername(authHeader.substring(7)); //extract email from the token
         Optional<User> user = userRepository.findById(email);
-        if(!user.isPresent()){
-            return ResponseEntity.badRequest().body(null);
+        if(!userRepository.existsById(email)){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
         List<Category> categories = categoryRepository.findAllByUser(user.get());
         List<CategoryMovieRatingDTO> categoryMovieRatingDTOS = new ArrayList<>();

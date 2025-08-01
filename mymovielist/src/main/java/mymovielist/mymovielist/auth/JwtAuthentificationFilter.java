@@ -36,6 +36,12 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
+        //do not filter to check jwt token if registering or logging in
+        if(request.getRequestURI().equals("/user/login") || request.getRequestURI().equals("/user/register")){
+            filterChain.doFilter(request,response);
+            return;
+        }
+
         String header = request.getHeader("Authorization");
         if(header != null){
             if(header.startsWith("Bearer ")){
@@ -52,6 +58,6 @@ public class JwtAuthentificationFilter extends OncePerRequestFilter {
             }
         }
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        response.getWriter().write("Unauthorized");
+        response.getWriter().write("Unauthorized request");
     }
 }

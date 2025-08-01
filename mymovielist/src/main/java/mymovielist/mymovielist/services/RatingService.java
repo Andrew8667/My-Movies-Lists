@@ -51,6 +51,12 @@ public class RatingService {
         return ResponseEntity.ok("Added rating successfully");
     }
 
+    /**
+     * Populates the reviews for each of the movies
+     * @param movieDTO contains essential info such as the movie id, title, and img
+     * @param movie that the review is for
+     * @param user of the session
+     */
     public void populateCategoryMovieReviewDTO(MovieDTO movieDTO, Movie movie, User user){
         Optional<Rating> rating = ratingRepository.findByUserAndMovie(user,movie);
         if(rating.isPresent()){

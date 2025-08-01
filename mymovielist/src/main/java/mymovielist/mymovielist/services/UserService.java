@@ -2,6 +2,7 @@ package mymovielist.mymovielist.services;
 
 import mymovielist.mymovielist.auth.JwtUtil;
 import mymovielist.mymovielist.dto.LoginDTO;
+import mymovielist.mymovielist.dto.UserDTO;
 import mymovielist.mymovielist.entities.User;
 import mymovielist.mymovielist.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.Optional;
 
@@ -43,15 +45,30 @@ public class UserService {
      * Checks the validity of the login details to the app
      * Used in "user/login"
      * @param loginDTO contains the email and password inputted in login page
-     * @return 200 response if the user matches, unauthorized response otherwise
+     * @return jwt token if successful, false otherwise
      */
-    public ResponseEntity<User> login(LoginDTO loginDTO){
+    public ResponseEntity<String> login(LoginDTO loginDTO){
         Optional<User> user = userRepository.findById(loginDTO.getEmail());
         if(user.isPresent()){
             //check password
-            if(new BCryptPasswordEncoder().matches(user.get().getPassword(),loginDTO.getPassword())){
-                return ResponseEntity.ok(user.get());
+            BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+            if(bCryptPasswordEncoder.matches(loginDTO.getPassword(),user.get().getPassword())){
+                return ResponseEntity.ok(jwtUtil.generateToken(loginDTO.getEmail()));
             }
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+    }
+
+    /**
+     * Gets the user that is making the request
+     * @param authHeader contains the token
+     * @return the user making the request
+     */
+    public ResponseEntity<UserDTO> getUser(String authHeader){
+        Optional<User> user = userRepository.findById(jwtUtil.extractUsername(authHeader.substring(7)));
+        if(user.isPresent()){
+            UserDTO userDTO = new UserDTO(user.get().getEmail(),user.get().getPassword(),user.get().getName());
+            return ResponseEntity.ok(userDTO);
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
     }

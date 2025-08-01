@@ -52,6 +52,12 @@ public class MovieService {
         return ResponseEntity.ok("The movie is already in the category");
     }
 
+    /**
+     * Populates the movies for each category
+     * @param movieDTOS contains essential info such as the movie id, title, and img
+     * @param category the movie belongs to
+     * @param user of the current session
+     */
     public void populateCategoryMovieReviewDTO(List<MovieDTO> movieDTOS, Category category, User user){
         List<Movie> movies = movieRepository.findAllByCategories(category);
         for(int i = 0 ; i < movies.size() ; i++){

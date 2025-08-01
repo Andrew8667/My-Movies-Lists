@@ -21,9 +21,15 @@ public class CategoryController {
     @Autowired
     private CategoryRepository categoryRepository;
 
+    /**
+     * Creates a new category
+     * @param categoryRequest contains the title and description of the new category
+     * @param authHeader contains jwt token
+     * @return response entity with the newly created category, null if it can't be created
+     */
     @PostMapping("/create")
-    public ResponseEntity<String> createCategory(@RequestBody CategoryRequest createCategoryRequest, @RequestHeader("Authorization") String authHeader){
-        return categoryService.createCategory(createCategoryRequest.getTitle(), createCategoryRequest.getDescription(),authHeader);
+    public ResponseEntity<Category> createCategory(@RequestBody CategoryRequest categoryRequest, @RequestHeader("Authorization") String authHeader){
+        return categoryService.createCategory(categoryRequest,authHeader);
     }
 
     @GetMapping("/getAll")
@@ -31,6 +37,12 @@ public class CategoryController {
         return categoryService.getCategories();
     }
 
+    /**
+     * Gets the user's categories, the movies inside the categories, and the ratings for those movies
+     * @param authHeader contains the jwt token
+     * @return the user's categories, the movies inside the categories, and the ratings for those movies in dictionary format
+     * null otherwise
+     */
     @GetMapping("getUserCategories")
     public ResponseEntity<List<CategoryMovieRatingDTO>> getUserCategories(@RequestHeader("Authorization") String authHeader){
         return categoryService.getUserCategories(authHeader);

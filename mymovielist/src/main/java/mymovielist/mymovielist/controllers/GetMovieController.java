@@ -2,6 +2,7 @@ package mymovielist.mymovielist.controllers;
 
 import org.apache.tomcat.util.json.JSONParser;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,27 +16,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import mymovielist.mymovielist.services.GetMovieService;
 
+/**
+ * Controller used for mappings related to retrieving movies from OMDb api
+ * @author Andrew Gee
+ */
 @RestController
-@RequestMapping("/movie")
+@RequestMapping("/getMovie")
 public class GetMovieController {
     @Autowired
     private GetMovieService getMovieService;
+
+    /**
+     * Obtains an array containing the details for the searched for movie
+     * @param title to search for
+     * @return array containing the details for the searched movie
+     */
     @GetMapping("/{title}")
     public ResponseEntity<String[]> getMovieDetails(@PathVariable String title){
-        try {
-            String[] movieDetails = new String[8];
-            JsonNode jsonNode = getMovieService.getMovie(title);
-            movieDetails[0]=jsonNode.get("Title").toString().replaceAll("\"", "");
-            movieDetails[1]=jsonNode.get("Year").toString().replaceAll("\"", "");
-            movieDetails[2]=jsonNode.get("Rated").toString().replaceAll("\"", "");
-            movieDetails[3]=jsonNode.get("Runtime").toString().replaceAll("\"", "");
-            movieDetails[4]=jsonNode.get("Genre").toString().replaceAll("\"", "");
-            movieDetails[5]=jsonNode.get("Director").toString().replaceAll("\"", "");
-            movieDetails[6]=jsonNode.get("Plot").toString().replaceAll("\"", "");
-            movieDetails[7]=jsonNode.get("Poster").toString().replaceAll("\"", "");
-            return ResponseEntity.ok(movieDetails);
+        try{
+            return getMovieService.getMovie(title);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
     }
 }

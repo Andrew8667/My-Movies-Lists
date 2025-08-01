@@ -15,4 +15,12 @@ import java.util.Optional;
  */
 public interface CategoryRepository extends JpaRepository<Category,Long>{
     public List<Category> findAllByUser(User user);
+
+    /**
+     * Checks if there is entry in category table with corresponding title and user
+     * @param title of the category
+     * @param user that owns the category
+     * @return true if found, false otherwise
+     */
+    public boolean existsByTitleAndUser(String title, User user);
 }

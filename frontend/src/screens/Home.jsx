@@ -20,364 +20,245 @@ import {
   Select,
   InputLabel,
   getScopedCssBaselineUtilityClass,
+  Alert,
+  FormControl,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useNavigation } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
+import NavigationBar from "../components/NavigationBar";
 
 const Home = function Home() {
-  const [search, setSearch] = useState("");
-  const [movie, setMovie] = useState(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [rateModalVisible, setRateModalVisible] = useState(false);
-  const [rating, setRating] = useState(0);
-  const [review, setReview] = useState("");
-  const navigate = useNavigate();
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [search, setSearch] = useState(""); //input inside the enter movie title field
+  const [movie, setMovie] = useState(null); //movie that was searched for
+  const [errorOpen, setErrorOpen] = useState(false); //controls visibilty status of error message
+  const [reviewModalOpen, setReviewModalOpen] = useState(false); //the modal used to add review
+  const [stars, setStars] = useState(0); //default number of stars for review
+  const [review, setReview] = useState(""); //review assocaited with rating
+  const [categoryMovieRating, setCategoryMovieRating] = useState(null); //contains all the user's categories, moves in the categories, and ratings for those movies
+  const [selectedCategories, setSelectedCategories] = useState([]); //the categories selected to add movie to
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/user/getName", {
+      .get("http://localhost:8080/category/getUserCategories", {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       })
-      .then((response) => setName(response.data))
-      .catch((error) => console.log(error));
-    axios
-      .get("http://localhost:8080/category/getAll", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      })
-      .then((response) => {
-        console.log(response.data);
-        setCategories(response.data);
-      })
+      .then((response) => setCategoryMovieRating(response.data))
       .catch((error) => console.log(error));
   }, []);
 
-  const saveMovie = ()=>{
-    axios.post('http://localhost:8080/movie/add',{
-      "title":movie.Title,
-      "img":movie.Poster,
-      "category":parseInt(selectedCategory)
-    },{
-      headers:{
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      }
-    })
-    .then(response=>console.log(response))
-    .catch(error=>console.log(error))
-  }
-
-
-  const processSearch = () => {
+  /**
+   * Gets the searched for movie and assigns it to movie
+   */
+  const getMovie = () => {
     axios
-      .get(`http://localhost:8080/movie/${search}`, {
+      .get(`http://localhost:8080/getMovie/${search}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       })
       .then((response) => {
-        setMovie({
-          Title: response.data[0],
-          Year: response.data[1],
-          Rated: response.data[2],
-          Runtime: response.data[3],
-          Genre: response.data[4],
-          Director: response.data[5],
-          Plot: response.data[6],
-          Poster: response.data[7],
-        });
+        setMovie(response.data);
       })
-      .catch((error) => console.log(error));
+      .catch((error) => {
+        setErrorOpen(true);
+        console.log(error);
+      });
   };
 
   return (
     <Container
       maxWidth={false}
       sx={{
+        backgroundColor: "#000000",
+        width: "100vw",
+        height: "200vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
         alignItems: "center",
       }}
     >
-      <AppBar
-        sx={{
-          width: "100%",
-          top: 0,
-          left: 0,
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          backgroundColor: "#db0000",
-        }}
-      >
-        <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
-            onClick={() => setDrawerOpen(true)}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              flexGrow: 1,
-              fontFamily: "Roboto",
-              fontWeight: 600,
-              fontSize: 30,
-            }}
-          >
-            MY MOVIES LISTS
-          </Typography>
-          <IconButton
-            onClick={(e) => {
-              setAnchorEl(e.target);
-            }}
-          >
-            <Avatar>{name.toUpperCase()}</Avatar>
-          </IconButton>
-          <Menu
-            open={anchorEl ? true : false}
-            anchorEl={anchorEl}
-            onClose={() => {
-              setAnchorEl(null);
-            }}
-          >
-            <MenuItem
-              onClick={() => {
-                localStorage.removeItem("token");
-                navigate("/");
-              }}
-            >
-              Logout
-            </MenuItem>
-          </Menu>
-        </Toolbar>
-      </AppBar>
-      <Drawer
-        anchor="left"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        sx={{ width: 30 }}
-      >
-        <Box
-          sx={{
-            height: "100%",
-            backgroundColor: "#FFFFFF",
-            width: 150,
-            marginTop: 8,
-          }}
-        >
-          <ListItemButton onClick={() => navigate("/home")}>
-            <ListItem>
-              <ListItemText primary="Search"></ListItemText>
-            </ListItem>
-          </ListItemButton>
-          <ListItemButton onClick={() => navigate("/lists")}>
-            <ListItem>
-              <ListItemText primary="Lists"></ListItemText>
-            </ListItem>
-          </ListItemButton>
-        </Box>
-      </Drawer>
+      <NavigationBar></NavigationBar>
       <Box
         sx={{
+          width: "600px",
           display: "flex",
+          marginTop: "200px",
           flexDirection: "row",
-          justifyContent: "space-between",
+          justifyContent: "space-evenly",
           alignItems: "center",
-          width: 500,
-          marginTop: 10,
         }}
       >
         <TextField
-          label="Search movie title"
-          variant="outlined"
-          sx={{ backgroundColor: "#564d4d", borderRadius: 2, width: 400 }}
-          onChange={(e) => {
-            setSearch(e.target.value);
+          label="Enter movie title"
+          InputProps={{
+            style: { color: "#FFFFFF" },
           }}
-        />
+          InputLabelProps={{
+            style: { color: "#FFFFFF" },
+          }}
+          sx={{
+            "& .MuiOutlinedInput-root fieldset": {
+              borderColor: "#FFFFFF",
+            },
+            border: 1,
+            borderColor: "#FFFFFF",
+            borderRadius: 2,
+            width: "400px",
+          }}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          required
+        ></TextField>
         <Button
           variant="contained"
           sx={{ backgroundColor: "#db0000" }}
-          onClick={processSearch}
+          onClick={() => getMovie()}
         >
           Search
         </Button>
       </Box>
       {movie && (
-        <Paper
-          elevation={3}
+        <Box
           sx={{
-            backgroundColor: "#000000",
+            width: "600px",
+            marginTop: "20px",
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
             border: 1,
-            borderColor: "#564d4d",
-            borderRadius: 3,
-            width: 400,
-            height: "75vh",
-            marginTop: 10,
-            overflow: "scroll",
+            borderColor: "#FFFFFF",
+            borderRadius: 2,
           }}
         >
-          <img src={movie.Poster} alt={`${movie.Title} poster`}></img>
-          <Typography sx={movieDetails}>{movie.Title}</Typography>
-          <Typography sx={movieDetails}>{movie.Year}</Typography>
-          <Typography sx={movieDetails}>{movie.Rated}</Typography>
-          <Typography sx={movieDetails}>{movie.Runtime}</Typography>
-          <Typography sx={movieDetails}>{movie.Genre}</Typography>
-          <Typography sx={movieDetails}>{movie.Plot}</Typography>
-          <Button
-            variant="contained"
-            sx={{ backgroundColor: "#db0000" }}
-            onClick={() => setRateModalVisible(true)}
-          >
-            Rate
-          </Button>
-          <Modal
-            open={rateModalVisible}
-            onClose={() => setRateModalVisible(false)}
+          <img src={movie[7]} alt={movie[0]}></img>
+          <Box
             sx={{
+              height: "100%",
               display: "flex",
-              flexDirection: "row",
+              flexDirection: "column",
               justifyContent: "space-evenly",
               alignItems: "center",
+              overflowY: "auto",
+              padding: 1,
             }}
           >
-            <Box
+            <Typography
+              sx={{ fontFamily: "sans-serif", fontSize: 24, fontWeight: 600 }}
+            >
+              {movie[0]}
+            </Typography>
+            <Typography sx={{ fontFamily: "sans-serif", fontSize: 16 }}>
+              {movie[1]}
+            </Typography>
+            <Typography sx={{ fontFamily: "sans-serif", fontSize: 16 }}>
+              {movie[2]}
+            </Typography>
+            <Typography sx={{ fontFamily: "sans-serif", fontSize: 16 }}>
+              {movie[3]}
+            </Typography>
+            <Typography sx={{ fontFamily: "sans-serif", fontSize: 16 }}>
+              {movie[4]}
+            </Typography>
+            <Typography sx={{ fontFamily: "sans-serif", fontSize: 16 }}>
+              {movie[5]}
+            </Typography>
+            <Typography sx={{ fontFamily: "sans-serif", fontSize: 16 }}>
+              {movie[6]}
+            </Typography>
+            <Button
+              variant="contained"
+              sx={{ backgroundColor: "#db0000" }}
+              onClick={() => setReviewModalOpen(true)}
+            >
+              Add
+            </Button>
+          </Box>
+        </Box>
+      )}
+      <Modal
+        open={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      >
+        <Box
+          sx={{
+            height: "400px",
+            width: "350px",
+            backgroundColor: "#FFFFFF",
+            borderRadius: 3,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-evenly",
+            alignItems: "center",
+          }}
+        >
+          <Rating
+            value={stars}
+            onChange={(e) => setStars(e.target.value)}
+            required
+          ></Rating>
+          <TextField
+            label="Add review here"
+            multiline
+            rows={6}
+            value={review}
+            onChange={(e) => setReview(e.target.value)}
+            sx={{ width: "100%" }}
+            required
+          />
+          <FormControl required sx={{ width: "200px" }}>
+            <InputLabel id="category-label" sx={{ color: "#000000" }}>
+              Choose List(s)
+            </InputLabel>
+            <Select
+              labelId="category-label"
+              multiple
+              value={selectedCategories}
+              onChange={(e) => setSelectedCategories(e.target.value)}
+              label="Choose List(s)"
+              MenuProps={{
+                PaperProps: {
+                  style: {
+                    maxHeight: 200,
+                    overflowY: "scroll",
+                  },
+                },
+              }}
               sx={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                alignItems: "center",
-                width: 400,
-                height: "70vh",
-                backgroundColor: "#FFFFFF",
-                borderRadius: 4,
-                overflow: "hidden",
+                "& .MuiOutlinedInput-root fieldset": {
+                  borderColor: "#000000",
+                },
+                border: 1,
+                borderColor: "#FFFFFF",
+                borderRadius: 2,
+                color: "#000000",
               }}
             >
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "20%",
-                  display: "flex",
-                  flexDirection: "row",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  backgroundColor: "#db0000",
-                }}
-              >
-                <Box sx={{ height: "50%", width: "10%", marginRight: 1 }}>
-                  <img
-                    src={movie.Poster}
-                    alt="movie poster"
-                    height="100%"
-                    width="100%"
-                  ></img>
-                </Box>
-                <Typography sx={{ fontWeight: 600, fontSize: 24 }}>
-                  {movie.Title} {movie.Year}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Rating
-                  value={rating}
-                  onChange={(e) => {
-                    setRating(e.target.value);
-                  }}
-                  required
-                ></Rating>
-              </Box>
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "200px",
-                }}
-              >
-                <TextField
-                  label="Add Review ..."
-                  onChange={(e) => {
-                    setReview(e.target.value);
-                  }}
-                  multiline
-                  required
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    "& .MuiInputBase-root": {
-                      height: "100%",
-                      alignItems: "flex-start",
-                    },
-                    "& textarea": {
-                      height: "100% !important",
-                      overflow: "auto",
-                    },
-                  }}
-                />
-              </Box>
-              <Box
-                sx={{
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <InputLabel id="selectedListId">
-                  Please select list to add movie to
-                </InputLabel>
-                <Select
-                  labelId="selectedListId"
-                  sx={{
-                    width: "40%",
-                  }}
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  required
-                >
-                  {categories.map((category) => {
-                    return (
-                      <MenuItem value={category.id}>{category.name}</MenuItem>
-                    );
-                  })}
-                </Select>
-              </Box>
-              <Button variant="contained" onClick={()=>{
-                saveMovie()
-              }} sx={{ backgroundColor: "#db0000",marginBottom:1 }}>
-                Save
-              </Button>
-            </Box>
-          </Modal>
-        </Paper>
-      )}
+              {categoryMovieRating?.map((item) => (
+                <MenuItem key={item.id} value={item.title}>
+                  {item.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button variant="contained" sx={{backgroundColor:'#db0000'}}>Create review</Button>
+        </Box>
+      </Modal>
+      <Modal
+        open={errorOpen}
+        onClose={() => setErrorOpen(false)}
+        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+      >
+        <Alert severity="error">Error finding movie! Please try again</Alert>
+      </Modal>
     </Container>
   );
-};
-
-const movieDetails = {
-  color: "#FFFFFF",
-  fontSize: 20,
 };
 
 export default Home;

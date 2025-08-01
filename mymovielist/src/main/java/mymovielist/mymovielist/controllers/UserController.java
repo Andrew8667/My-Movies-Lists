@@ -4,6 +4,7 @@ import java.lang.StackWalker.Option;
 import java.util.Optional;
 
 import mymovielist.mymovielist.dto.LoginDTO;
+import mymovielist.mymovielist.dto.UserDTO;
 import mymovielist.mymovielist.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -49,7 +50,17 @@ public class UserController {
      * @return 200 response if the user matches, unauthorized response otherwise
      */
     @PostMapping("/login")
-    public ResponseEntity<User> login(@RequestBody LoginDTO loginDTO){
+    public ResponseEntity<String> login(@RequestBody LoginDTO loginDTO){
         return userService.login(loginDTO);
+    }
+
+    /**
+     * Gets the user that is making the request
+     * @param authHeader contains the token
+     * @return the user making the request
+     */
+    @GetMapping("/getUser")
+    public ResponseEntity<UserDTO> getUser(@RequestHeader("Authorization") String authHeader){
+        return userService.getUser(authHeader);
     }
 }
