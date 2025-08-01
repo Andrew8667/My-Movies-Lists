@@ -133,7 +133,7 @@ const Home = function Home() {
             component="div"
             sx={{
               flexGrow: 1,
-              fontFamily: "inter",
+              fontFamily: "Roboto",
               fontWeight: 600,
               fontSize: 30,
             }}

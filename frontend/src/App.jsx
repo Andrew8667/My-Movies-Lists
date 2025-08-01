@@ -7,12 +7,17 @@ import Login from './screens/Login'
 import Register from './screens/Register'
 import Home from './screens/Home'
 import Lists from './screens/Lists'
+import LoginRegistration from './screens/LoginRegistration'
 
+/**
+ * Contains the routing to the screens 
+ * @returns routing configuration to screens of app
+ */
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/' element={<Login/>}></Route>
+        <Route path='/' element={<LoginRegistration/>}></Route>
         <Route path='/register' element={<Register/>}></Route>
         <Route path='/home' element={<Home/>}></Route>
         <Route path='/lists' element={<Lists/>}></Route>

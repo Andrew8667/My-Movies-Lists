@@ -7,6 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository for the movie entity
+ * Provides JPA methods
+ * @author Andrew Gee
+ */
 public interface MovieRepository extends JpaRepository<Movie,Long> {
     public Optional<Movie> findByTitle(String title);
     public List<Movie> findAllByCategories(Category category);

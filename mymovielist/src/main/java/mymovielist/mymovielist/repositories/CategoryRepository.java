@@ -8,6 +8,11 @@ import mymovielist.mymovielist.entities.Category;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository for the category entity
+ * Provides JPA methods
+ * @author Andrew Gee
+ */
 public interface CategoryRepository extends JpaRepository<Category,Long>{
     public List<Category> findAllByUser(User user);
 }

@@ -22,7 +22,7 @@ const Login = function Login(){
     return(
         <Container maxWidth={false}>
             <Paper elevation={3} sx={{width:'40vw',height:'50vh',display:'flex',flexDirection:'column',justifyContent:'space-evenly',borderRadius:5,alignItems:'center'}}>
-                <Typography sx={{fontFamily:'inter',fontWeight:600,fontSize:32,color:'#db0000'}}>MY MOVIES LISTS</Typography>
+                <Typography sx={{fontFamily:'Sans-serif',fontWeight:600,fontSize:32,color:'#db0000'}}>MY MOVIES LISTS</Typography>
                 <Box sx={{width:'100%',height:'50%',display:'flex',flexDirection:'column',justifyContent:'space-evenly',alignItems:'center'}}>
                     <TextField required onChange={(e)=>setEmail(e.target.value)} label="Email" variant="outlined" sx={{width:'75%'}}/>
                     <TextField required onChange={(e)=>setPassword(e.target.value)} type='password' label="Password" variant="outlined" sx={{width:'75%'}}/>
