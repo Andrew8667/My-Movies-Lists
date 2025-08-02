@@ -12,8 +12,4 @@ import org.springframework.web.bind.annotation.*;
 public class RatingController {
     @Autowired
     private RatingService ratingService;
-    @PostMapping("/add")
-    public ResponseEntity<String> addRating(@RequestBody RatingRequest rating, @RequestHeader("Authorization") String authHeader){
-        return ratingService.addRating(rating,authHeader);
-    }
 }

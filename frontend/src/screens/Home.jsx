@@ -38,7 +38,8 @@ const Home = function Home() {
   const [review, setReview] = useState(""); //review assocaited with rating
   const [categoryMovieRating, setCategoryMovieRating] = useState(null); //contains all the user's categories, moves in the categories, and ratings for those movies
   const [selectedCategories, setSelectedCategories] = useState([]); //the categories selected to add movie to
-
+  const [addModal, setAddModal] = useState(false); //used for if the modal is visible or not
+  const [success, setSuccess] = useState(true); //used to monitor if adding movie was successful or not
   useEffect(() => {
     axios
       .get("http://localhost:8080/category/getUserCategories", {
@@ -67,6 +68,35 @@ const Home = function Home() {
         setErrorOpen(true);
         console.log(error);
       });
+  };
+
+  const addMovie = async () => {
+    try {
+      await getMovie(); 
+      await new Promise((resolve) => setTimeout(resolve, 50)); 
+      await axios.post(
+        "http://localhost:8080/movie/add",
+        {
+          title: movie[0],
+          img: movie[7],
+          stars: stars,
+          review: review,
+          categories: selectedCategories,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      setSuccess(true);
+      setReviewModalOpen(false);
+      setAddModal(true);
+    } catch (error) {
+      console.error(error);
+      setSuccess(false);
+      setAddModal(true);
+    }
   };
 
   return (
@@ -181,81 +211,113 @@ const Home = function Home() {
           </Box>
         </Box>
       )}
-      <Modal
-        open={reviewModalOpen}
-        onClose={() => setReviewModalOpen(false)}
-        sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-      >
-        <Box
+      {movie && (
+        <Modal
+          open={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
           sx={{
-            height: "400px",
-            width: "350px",
-            backgroundColor: "#FFFFFF",
-            borderRadius: 3,
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-evenly",
+            justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <Rating
-            value={stars}
-            onChange={(e) => setStars(e.target.value)}
-            required
-          ></Rating>
-          <TextField
-            label="Add review here"
-            multiline
-            rows={6}
-            value={review}
-            onChange={(e) => setReview(e.target.value)}
-            sx={{ width: "100%" }}
-            required
-          />
-          <FormControl required sx={{ width: "200px" }}>
-            <InputLabel id="category-label" sx={{ color: "#000000" }}>
-              Choose List(s)
-            </InputLabel>
-            <Select
-              labelId="category-label"
-              multiple
-              value={selectedCategories}
-              onChange={(e) => setSelectedCategories(e.target.value)}
-              label="Choose List(s)"
-              MenuProps={{
-                PaperProps: {
-                  style: {
-                    maxHeight: 200,
-                    overflowY: "scroll",
+          <Box
+            sx={{
+              height: "400px",
+              width: "350px",
+              backgroundColor: "#FFFFFF",
+              borderRadius: 3,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-evenly",
+              alignItems: "center",
+            }}
+          >
+            <Rating
+              value={stars}
+              onChange={(e) => setStars(e.target.value)}
+              required
+            ></Rating>
+            <TextField
+              label="Add review here"
+              multiline
+              rows={6}
+              value={review}
+              onChange={(e) => setReview(e.target.value)}
+              sx={{ width: "100%" }}
+              required
+            />
+            <FormControl required sx={{ width: "200px" }}>
+              <InputLabel id="category-label" sx={{ color: "#000000" }}>
+                Choose List(s)
+              </InputLabel>
+              <Select
+                labelId="category-label"
+                multiple
+                value={selectedCategories}
+                onChange={(e) => setSelectedCategories(e.target.value)}
+                label="Choose List(s)"
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 200,
+                      overflowY: "scroll",
+                    },
                   },
-                },
-              }}
-              sx={{
-                "& .MuiOutlinedInput-root fieldset": {
-                  borderColor: "#000000",
-                },
-                border: 1,
-                borderColor: "#FFFFFF",
-                borderRadius: 2,
-                color: "#000000",
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root fieldset": {
+                    borderColor: "#000000",
+                  },
+                  border: 1,
+                  borderColor: "#FFFFFF",
+                  borderRadius: 2,
+                  color: "#000000",
+                }}
+              >
+                {categoryMovieRating?.map((item) => (
+                  <MenuItem key={item.id} value={item.id}>
+                    {item.title}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button
+              variant="contained"
+              sx={{ backgroundColor: "#db0000" }}
+              disabled={!movie || movie.length === 0}
+              onClick={() => {
+                addMovie();
               }}
             >
-              {categoryMovieRating?.map((item) => (
-                <MenuItem key={item.id} value={item.title}>
-                  {item.title}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Button variant="contained" sx={{backgroundColor:'#db0000'}}>Create review</Button>
-        </Box>
-      </Modal>
+              Create review
+            </Button>
+          </Box>
+        </Modal>
+      )}
       <Modal
         open={errorOpen}
         onClose={() => setErrorOpen(false)}
         sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
       >
         <Alert severity="error">Error finding movie! Please try again</Alert>
+      </Modal>
+      <Modal
+        open={addModal}
+        onClose={() => setAddModal(false)}
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <Alert severity={success ? "success" : "error"}>
+          {success
+            ? "Movie review successfully created!"
+            : "Error creating movie review. Please try again!"}
+        </Alert>
       </Modal>
     </Container>
   );

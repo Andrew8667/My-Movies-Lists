@@ -31,19 +31,17 @@ public class RatingService {
     private MovieRepository movieRepository;
     @Autowired
     private UserRepository userRepository;
-    public ResponseEntity<String> addRating(RatingRequest rating, String authHeader){
+    public ResponseEntity<String> addRating(String movieName,RatingDTO ratingDTO, String authHeader){
         Rating newRating = new Rating();
         String email = jwtUtil.extractUsername(authHeader.substring(7));
         Optional<User> user = userRepository.findById(email);
-        Optional<Movie> movie = movieRepository.findByTitle(rating.getTitle());
-        newRating.setDescription(rating.getDescription());
-        newRating.setRating(rating.getRating());
+        Optional<Movie> movie = movieRepository.findByTitle(movieName);
+        newRating.setDescription(ratingDTO.getDescription());
+        newRating.setRating(ratingDTO.getRating());
         if(user.isPresent() && movie.isPresent()){
             newRating.setMovie(movie.get());
             newRating.setUser(user.get());
             RatingKey ratingKey = new RatingKey(user.get().getEmail(),movie.get().getId());
-            System.out.println(ratingKey.getEmail());
-            System.out.println(ratingKey.getId());
             newRating.setRatingKey(ratingKey);
         }
 

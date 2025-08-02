@@ -1,15 +1,19 @@
 package mymovielist.mymovielist.services;
 
-import mymovielist.mymovielist.dto.CategoryMovieRatingDTO;
-import mymovielist.mymovielist.dto.MovieCategoryRequest;
-import mymovielist.mymovielist.dto.MovieDTO;
-import mymovielist.mymovielist.dto.RatingDTO;
+import mymovielist.mymovielist.auth.JwtUtil;
+import mymovielist.mymovielist.dto.*;
 import mymovielist.mymovielist.entities.Category;
 import mymovielist.mymovielist.entities.Movie;
+import mymovielist.mymovielist.entities.Rating;
 import mymovielist.mymovielist.entities.User;
+import mymovielist.mymovielist.keys.RatingKey;
 import mymovielist.mymovielist.repositories.CategoryRepository;
 import mymovielist.mymovielist.repositories.MovieRepository;
+import mymovielist.mymovielist.repositories.RatingRepository;
+import mymovielist.mymovielist.repositories.UserRepository;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -25,31 +29,50 @@ public class MovieService {
     private CategoryRepository categoryRepository;
     @Autowired
     private RatingService ratingService;
-    public ResponseEntity<String> addMovieCategory(MovieCategoryRequest movie){
-        Optional<Movie> curMovie = movieRepository.findByTitle(movie.getTitle());
-        if(!curMovie.isPresent()){ //movie hasn't been added
+    @Autowired
+    private RatingRepository ratingRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private JwtUtil jwtUtil;
+    public ResponseEntity<String> addMovie(String authHeader, AddMovieReviewDTO addMovieReviewDTO){
+        Optional<Movie> movie = movieRepository.findByTitle(addMovieReviewDTO.getTitle());
+        Optional<User> user = userRepository.findById(jwtUtil.extractUsername(authHeader.substring(7)));
+        if(movie.isPresent()){
+            if(!ratingRepository.existsByUserAndMovie(user.get(),movie.get())){
+                Rating rating = new Rating();
+                rating.setRatingKey(new RatingKey(user.get().getEmail(),movie.get().getId()));
+                rating.setUser(user.get());
+                rating.setMovie(movie.get());
+                rating.setRating(addMovieReviewDTO.getStars());
+                rating.setDescription(addMovieReviewDTO.getReview());
+                addMovieReviewDTO.getCategories().forEach(id->{
+                    Optional<Category> category = categoryRepository.findById(id);
+                    movie.get().getCategories().add(category.get());
+                });
+                ratingRepository.save(rating);
+                return ResponseEntity.ok("Successfully added review");
+            }
+        } else {
             Movie newMovie = new Movie();
-            newMovie.setTitle(movie.getTitle());
-            newMovie.setImg(movie.getImg());
-            Optional<Category> category = categoryRepository.findById(movie.getCategory());
-            List<Category> categories = new ArrayList<>();
-            if(category.isPresent()){
-                categories.add(category.get());
-            }
-            newMovie.setCategories(categories);
+            newMovie.setTitle(addMovieReviewDTO.getTitle());
+            newMovie.setImg(addMovieReviewDTO.getImg());
+            newMovie.setCategories(new ArrayList<>());
+            addMovieReviewDTO.getCategories().forEach(id->{
+                Optional<Category> category = categoryRepository.findById(id);
+                newMovie.getCategories().add(category.get());
+            });
             movieRepository.save(newMovie);
-            return ResponseEntity.ok("Added new movie");
-        }else { //movie already exists
-            Optional<Category> category = categoryRepository.findById(movie.getCategory());
-            if(category.isPresent()){
-                if(!curMovie.get().getCategories().contains(category.get())){
-                    curMovie.get().getCategories().add(category.get());
-                    movieRepository.save(curMovie.get());
-                    return ResponseEntity.ok("Added category to movie");
-                }
-            }
+            Rating rating = new Rating();
+            rating.setDescription(addMovieReviewDTO.getReview());
+            rating.setRating(addMovieReviewDTO.getStars());
+            rating.setUser(user.get());
+            rating.setMovie(newMovie);
+            rating.setRatingKey(new RatingKey(user.get().getEmail(),movie.get().getId()));
+            ratingRepository.save(rating);
+            return ResponseEntity.ok("Successfully added movie");
         }
-        return ResponseEntity.ok("The movie is already in the category");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not add movie or review");
     }
 
     /**
