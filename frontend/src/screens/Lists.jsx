@@ -27,7 +27,8 @@ import NavigationBar from "../components/NavigationBar";
 
 const Lists = function Lists() {
   const navigate = useNavigate();
-  const [createListModalVisible, setCreateListModalVisible] = useState(false); //visibilty of modal for creating new list
+  const [listModal, setListModal] = useState(false); //visibilty of modal for creating new list
+  const [isCreate,setIsCreate] = useState(true); //decides what the modal dealing with list should display: edit or delete screen
   const [listName, setListName] = useState(""); //the name of the list to be added
   const [description, setDescription] = useState(""); //the description of the list
   const [statusModalOpen, setStatusModalOpen] = useState(false); //used to control visibility of feedback after trying to create list
@@ -35,6 +36,8 @@ const Lists = function Lists() {
   const [categoriesMoviesReviews, setCategoriesMoviesReviews] = useState([]); //dictionary containing the categories, the movies inside each category, and their ratings
   const [listDescriptionEl, setListDescriptionEl] = useState(null); //the element the list description will be attached to
   const [displayedDescription, setDisplayedDescription] = useState(null); //the description of the current popover
+  const [editId,setEditId] = useState(null) //the id of category we want to edit
+
   useEffect(() => {
     //find the categories, their movies, and ratings for the users
     axios
@@ -72,7 +75,16 @@ const Lists = function Lists() {
       .then((response) => {
         setStatusModalOpen(true);
         setIsSuccessful(true);
-        setCreateListModalVisible(false);
+        setListModal(false);
+        setCategoriesMoviesReviews(prev=>[
+            ...prev,
+            {
+                "id":response.data.id,
+                "title":response.data.name,
+                "description":response.data.description,
+                "movies":[]
+            }
+        ])
       })
       .catch((error) => {
         setStatusModalOpen(true);
@@ -80,6 +92,50 @@ const Lists = function Lists() {
         console.log(error);
       });
   };
+
+  /**
+   * Handles when user tries creating new list
+   */
+   const editList = () => {
+    axios.put(`http://localhost:8080/category/update/${editId}`,{
+        "title":listName,
+        "description":description
+    },{
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+    .then(response=>{
+        console.log(response.data)
+        setCategoriesMoviesReviews(prev=>prev.map(category=>category.id === editId?({
+            ...category,
+            "title":listName,
+            "description":description
+        }):category))
+        setListName('')
+        setDescription('')
+        setListModal(false)
+    })
+    .catch(error=>{
+        console.log(error)
+    })
+  };
+
+  /**
+   * Handles the deletion of the list and the removal of the list from the movies
+   */
+  const deleteList = (deleteListId)=>{
+    axios.delete(`http://localhost:8080/category/delete/${deleteListId}`,{
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+    .then(response=>{
+        console.log(response)
+        setCategoriesMoviesReviews(prev=>prev.filter(item=>item.id !== deleteListId))
+    })
+    .then(error=>console.log(error))
+  }
 
   return (
     <Container
@@ -90,6 +146,7 @@ const Lists = function Lists() {
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",
+        overflowY: "scroll",
       }}
     >
       <NavigationBar></NavigationBar>
@@ -104,14 +161,17 @@ const Lists = function Lists() {
         <Button
           variant="contained"
           sx={{ backgroundColor: "#db0000" }}
-          onClick={() => setCreateListModalVisible(true)}
+          onClick={() => {
+            setListModal(true)
+            setIsCreate(true)
+          }}
         >
           Create New List
         </Button>
       </Box>
       <Modal
-        open={createListModalVisible}
-        onClose={() => setCreateListModalVisible(false)}
+        open={listModal}
+        onClose={() => setListModal(false)}
         sx={{
           display: "flex",
           justifyContent: "center",
@@ -151,9 +211,15 @@ const Lists = function Lists() {
           <Button
             variant="contained"
             sx={{ backgroundColor: "#db0000" }}
-            onClick={() => createList()}
+            onClick={() => {
+                if(isCreate){
+                    createList()
+                }else {
+                    editList()
+                }
+            }}
           >
-            Create
+            {isCreate? "Create":"Save"}
           </Button>
         </Box>
       </Modal>
@@ -186,21 +252,46 @@ const Lists = function Lists() {
                 display: "flex",
                 flexDirection: "row",
                 alignItems: "center",
+                justifyContent:'space-between'
               }}
             >
-              <Typography
-                sx={{ fontFamily: "sans-serif", fontSize: 24, fontWeight: 600 }}
-              >
-                {item.title}
-              </Typography>
-              <IconButton
-                onClick={(e) => {
-                  setListDescriptionEl(e.currentTarget);
-                  setDisplayedDescription(item.description);
-                }}
-              >
-                <InfoIcon color="primary"></InfoIcon>
-              </IconButton>
+              <Box sx={{width:'auto',display:'flex',flexDirection:'row',justifyContent:'space-evenly',alignItems:'center'}}>
+                <Typography
+                  sx={{
+                    fontFamily: "sans-serif",
+                    fontSize: 24,
+                    fontWeight: 600,
+                  }}
+                >
+                  {item.title}
+                </Typography>
+                <IconButton
+                  onClick={(e) => {
+                    setListDescriptionEl(e.currentTarget);
+                    setDisplayedDescription(item.description);
+                  }}
+                >
+                  <InfoIcon color="primary"></InfoIcon>
+                </IconButton>
+              </Box>
+              <Box sx={{display:'flex',flexDirection:'row',justifyContent:'space-evenly',alignItems:'center',width:'200px'}}>
+                <Button
+                  variant="outlined"
+                  sx={{ color: "#db0000", borderColor: "#db0000" }}
+                  onClick={()=>{
+                    setListModal(true)
+                    setIsCreate(false)
+                    setEditId(item.id)
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button variant="contained" sx={{ backgroundColor: "#db0000" }} onClick={()=>{
+                    deleteList(item.id)
+                }}>
+                  Delete
+                </Button>
+              </Box>
               <Popover
                 open={listDescriptionEl ? true : false}
                 anchorEl={listDescriptionEl}
@@ -215,11 +306,12 @@ const Lists = function Lists() {
             </Box>
             <Box
               sx={{
-                width: "100%",
-                height: "200px",
+                width: "100vw",
+                height: "225px",
                 marginTop: "20px",
                 display: "flex",
                 flexDirection: "row",
+                overflowX: "scroll",
               }}
             >
               {item.movies &&
@@ -228,12 +320,13 @@ const Lists = function Lists() {
                   <Box
                     key={movie.id}
                     sx={{
-                      height: "100%",
+                      flexShrink: 0,
+                      height: "95%",
                       marginRight: "20px",
                       borderRadius: 3,
                       overflow: "hidden",
-                      display:'flex',
-                      flexDirection:'column'
+                      display: "flex",
+                      flexDirection: "column",
                     }}
                   >
                     <img src={movie.img} height="90%"></img>

@@ -52,28 +52,26 @@ const Home = function Home() {
   }, []);
 
   /**
-   * Gets the searched for movie and assigns it to movie
+   * Returns the searched for movie and assigns it to movie
    */
-  const getMovie = () => {
-    axios
-      .get(`http://localhost:8080/getMovie/${search}`, {
+   const getMovie = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8080/getMovie/${search}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-      })
-      .then((response) => {
-        setMovie(response.data);
-      })
-      .catch((error) => {
-        setErrorOpen(true);
-        console.log(error);
       });
+      setMovie(response.data);
+      return response.data; 
+    } catch (error) {
+      setErrorOpen(true);
+      console.log(error);
+      return null;
+    }
   };
-
+  
   const addMovie = async () => {
     try {
-      await getMovie(); 
-      await new Promise((resolve) => setTimeout(resolve, 50)); 
       await axios.post(
         "http://localhost:8080/movie/add",
         {
@@ -105,7 +103,7 @@ const Home = function Home() {
       sx={{
         backgroundColor: "#000000",
         width: "100vw",
-        height: "200vh",
+        height: "100vh",
         display: "flex",
         flexDirection: "column",
         justifyContent: "flex-start",

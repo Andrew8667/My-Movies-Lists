@@ -1,20 +1,18 @@
 package mymovielist.mymovielist.dto;
 
-import mymovielist.mymovielist.entities.Category;
-
 import java.util.List;
 
-public class AddMovieReviewDTO {
+public class MovieReviewDTO {
     private String title; //title of the movie
     private String img; //poster of the movie
     private Double stars; //rating out of 5 of the movie
     private String review; //review of the movie
     private List<Long> categories; //id of categories to add movie to
 
-    public AddMovieReviewDTO() {
+    public MovieReviewDTO() {
     }
 
-    public AddMovieReviewDTO(String title, String img, Double stars, String review, List<Long> categories) {
+    public MovieReviewDTO(String title, String img, Double stars, String review, List<Long> categories) {
         this.title = title;
         this.img = img;
         this.stars = stars;

@@ -4,6 +4,8 @@ import mymovielist.mymovielist.auth.JwtUtil;
 import mymovielist.mymovielist.dto.CategoryDTO;
 import mymovielist.mymovielist.dto.CategoryMovieRatingDTO;
 import mymovielist.mymovielist.dto.CategoryRequest;
+import mymovielist.mymovielist.entities.Movie;
+import mymovielist.mymovielist.repositories.MovieRepository;
 import mymovielist.mymovielist.repositories.UserRepository;
 import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,14 +31,16 @@ public class CategoryService {
     private UserRepository userRepository;
     @Autowired
     private MovieService movieService;
+    @Autowired
+    private MovieRepository movieRepository;
 
     /**
      * Creates a new category
      * @param categoryRequest contains the title and description of the new category
      * @param authHeader contains jwt token
-     * @return response entity with the newly created category, null if it can't be created
+     * @return response entity with the newly created category DTO, null if it can't be created
      */
-    public ResponseEntity<Category> createCategory(CategoryRequest categoryRequest, String authHeader){
+    public ResponseEntity<CategoryDTO> createCategory(CategoryRequest categoryRequest, String authHeader){
         String token = authHeader.substring(7);
         String email = jwtUtil.extractUsername(token);
         Optional<User> user = userRepository.findById(email);
@@ -47,7 +51,9 @@ public class CategoryService {
                 category.setTitle(categoryRequest.getTitle());
                 category.setUser(user.get());
                 category.setDescription(categoryRequest.getDescription());
-                return ResponseEntity.ok(categoryRepository.save(category));
+                Category savedCategory = categoryRepository.save(category);
+                CategoryDTO categoryDTO = new CategoryDTO(savedCategory.getId(),categoryRequest.getTitle(),categoryRequest.getDescription(),user.get().getEmail());
+                return ResponseEntity.ok(categoryDTO);
             }
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
@@ -99,14 +105,42 @@ public class CategoryService {
         return ResponseEntity.badRequest().body(null);
     }
 
-    public ResponseEntity<String> updateCategoryTitle(Long id, CategoryRequest categoryRequest){
+    /**
+     * Updates the category's title and description
+     * @param token jwt token of user
+     * @param id of the category
+     * @param categoryRequest contains the new title and description
+     * @return status of the update
+     */
+    public ResponseEntity<String> updateCategoryTitleDesc(String token, Long id, CategoryRequest categoryRequest){
+        Optional<Category> category = categoryRepository.findById(id);
+        Optional<User> user = userRepository.findById(jwtUtil.extractUsername(token));
+        if(category.isPresent() && user.isPresent()) {
+            if (!categoryRepository.existsByTitleAndUser(categoryRequest.getTitle(),user.get())){
+                category.get().setTitle(categoryRequest.getTitle());
+                category.get().setDescription(categoryRequest.getDescription());
+                categoryRepository.save(category.get());
+                return ResponseEntity.ok("Successfully updated category title");
+            }
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not find category to update");
+    }
+
+    /**
+     * Deletes a users category and the categories from the movie
+     * @param id of the category we want to remove
+     * @return a response entity with http status
+     */
+    public ResponseEntity<String> deleteCategory(Long id){
         Optional<Category> category = categoryRepository.findById(id);
         if(category.isPresent()){
-            category.get().setTitle(categoryRequest.getTitle());
-            category.get().setDescription(categoryRequest.getDescription());
-            categoryRepository.save(category.get());
-            return ResponseEntity.ok("Successfully updated category title");
+            List<Movie> movies = movieRepository.findAllByCategories(category.get());
+            movies.forEach(movie -> {
+                movie.getCategories().remove(category.get());
+            });
+            categoryRepository.deleteById(id);
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body("Successfully deleted the category");
         }
-        return ResponseEntity.badRequest().body("Could not find category to update");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not delete the category");
     }
 }

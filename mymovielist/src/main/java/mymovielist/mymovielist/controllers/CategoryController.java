@@ -28,7 +28,7 @@ public class CategoryController {
      * @return response entity with the newly created category, null if it can't be created
      */
     @PostMapping("/create")
-    public ResponseEntity<Category> createCategory(@RequestBody CategoryRequest categoryRequest, @RequestHeader("Authorization") String authHeader){
+    public ResponseEntity<CategoryDTO> createCategory(@RequestBody CategoryRequest categoryRequest, @RequestHeader("Authorization") String authHeader){
         return categoryService.createCategory(categoryRequest,authHeader);
     }
 
@@ -53,14 +53,20 @@ public class CategoryController {
         return categoryService.getCategory(id);
     }
 
+    /**
+     * Updates the category's title and description
+     * @param authHeader authorization header
+     * @param id of the category
+     * @param categoryRequest contains the new title and description
+     * @return status of the update
+     */
     @PutMapping("/update/{id}")
-    public ResponseEntity<String> updateCategoryTitle(@PathVariable("id") Long id,@RequestBody CategoryRequest categoryRequest){
-        return categoryService.updateCategoryTitle(id,categoryRequest);
+    public ResponseEntity<String> updateCategoryTitleDesc(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Long id,@RequestBody CategoryRequest categoryRequest){
+        return categoryService.updateCategoryTitleDesc(authHeader.substring(7), id,categoryRequest);
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteCategory(@PathVariable("id") Long id){
-        categoryRepository.deleteById(id);
-        return ResponseEntity.ok("Category deleted");
+        return categoryService.deleteCategory(id);
     }
 }
