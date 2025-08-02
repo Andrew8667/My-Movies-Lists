@@ -16,4 +16,5 @@ import java.util.Optional;
 public interface RatingRepository extends JpaRepository<Rating, RatingKey> {
     public Optional<Rating> findByUserAndMovie(User user, Movie movie);
     public boolean existsByUserAndMovie(User user,Movie movie);
+    public Optional<Rating> findByRatingKey(RatingKey ratingKey);
 }

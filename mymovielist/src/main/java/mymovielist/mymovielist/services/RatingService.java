@@ -14,9 +14,11 @@ import mymovielist.mymovielist.repositories.MovieRepository;
 import mymovielist.mymovielist.repositories.RatingRepository;
 import mymovielist.mymovielist.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import javax.swing.text.html.Option;
 import java.util.Optional;
@@ -61,5 +63,21 @@ public class RatingService {
             RatingDTO ratingDTO = new RatingDTO(rating.get().getRating(),rating.get().getDescription());
             movieDTO.setRating(ratingDTO);
         }
+    }
+
+    public ResponseEntity<String> updateRating(long movieId, String authHeader, RatingDTO ratingDTO){
+        String email = jwtUtil.extractUsername(authHeader.substring(7));
+        Optional<User> user = userRepository.findById(email);
+        Optional<Movie> movie = movieRepository.findById(movieId);
+        if(user.isPresent() && movie.isPresent()){
+            Optional<Rating> rating = ratingRepository.findByUserAndMovie(user.get(),movie.get());
+            if(rating.isPresent()){
+                rating.get().setRating(ratingDTO.getRating());
+                rating.get().setDescription(ratingDTO.getDescription());
+                ratingRepository.save(rating.get());
+                return ResponseEntity.ok("Successfully updated rating");
+            }
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Couldn't update rating");
     }
 }

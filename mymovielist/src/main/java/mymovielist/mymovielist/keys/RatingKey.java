@@ -83,6 +83,6 @@ public class RatingKey implements Serializable {
             return false;
         }
         RatingKey ratingKey = (RatingKey) obj;
-        return ratingKey.getId() == this.getId() && ratingKey.getEmail() == this.getEmail();
+        return ratingKey.getId() == this.getId() && ratingKey.getEmail().equals(this.getEmail());
     }
 }
