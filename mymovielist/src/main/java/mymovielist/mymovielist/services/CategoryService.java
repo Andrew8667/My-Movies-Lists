@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import mymovielist.mymovielist.entities.Category;
 import mymovielist.mymovielist.entities.User;
 import mymovielist.mymovielist.repositories.CategoryRepository;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,17 +58,6 @@ public class CategoryService {
             }
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-    }
-
-    public ResponseEntity<List<CategoryDTO>> getCategories(){
-        List<Category> categories = categoryRepository.findAll();
-        List<CategoryDTO> returnCategories = new ArrayList<>();
-        for(int i = 0 ; i < categories.size(); i++){
-            Category category = categories.get(i);
-            CategoryDTO categoryDTO = new CategoryDTO(category.getId(),category.getTitle(),category.getDescription(),category.getUser().getEmail());
-            returnCategories.add(categoryDTO);
-        }
-        return ResponseEntity.ok(returnCategories);
     }
 
     /**
@@ -143,4 +133,6 @@ public class CategoryService {
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not delete the category");
     }
+
+
 }

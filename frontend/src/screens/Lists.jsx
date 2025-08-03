@@ -45,8 +45,11 @@ const Lists = function Lists() {
   const [reviewDescription, setReviewDescription] = useState(null); //the description associated with the review
   const [movieModalVisible, setMovieModalVisible] = useState(false); //controls the modal that displays the review details for movie
   const [selectedCategory, setSelectedCategory] = useState(null); //the category of movie that was selected
+  const [rerender, setRerender] = useState(0); //used to rerender after updated review
+
   useEffect(() => {
     //find the categories, their movies, and ratings for the users
+    console.log(localStorage.getItem('token'))
     axios
       .get("http://localhost:8080/category/getUserCategories", {
         headers: {
@@ -60,7 +63,7 @@ const Lists = function Lists() {
       .catch((error) => {
         console.log(error);
       });
-  }, []);
+  }, [rerender]);
 
   useEffect(() => {
     if (selectedMovie) {
@@ -165,7 +168,7 @@ const Lists = function Lists() {
       .then((error) => console.log(error));
   };
 
-  const updateMovie = (categoryId) => {
+  const updateMovie = () => {
     axios
       .put(
         `http://localhost:8080/rating/update/${selectedMovie.id}`,
@@ -180,7 +183,7 @@ const Lists = function Lists() {
         }
       )
       .then((response) => {
-        console.log(response);
+        setRerender((prev) => prev + 1);
       })
       .catch((error) => {
         console.log(error);
@@ -209,6 +212,34 @@ const Lists = function Lists() {
       console.error(error);
     }
   };
+
+  const deleteMovieFromCategory = ()=>{
+    axios.delete(`http://localhost:8080/movie/delete/${selectedMovie.id}/${selectedCategory}`,{
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+    })
+    .then(response=>{
+        setRerender(prev=>prev+1)
+        setMovieModalVisible(false)
+    })
+    .catch(error=>console.log(error))
+  }
+
+  const deleteReview = ()=>{
+    axios.delete(`http://localhost:8080/rating/delete/${selectedMovie.id}`,{
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+    })
+    .then(response=>{
+        console.log(response)
+        setRerender(prev=>prev+1)
+    })
+    .catch(error=>{
+        console.log(error)
+    })
+  }
 
   return (
     <Container
@@ -475,8 +506,8 @@ const Lists = function Lists() {
               required
             />
             <Button
-              variant="contained"
-              sx={{ backgroundColor: "#db0000" }}
+              variant="outlined"
+              sx={{ color: "#db0000", borderColor: "#db0000" }}
               onClick={() => {
                 if (selectedMovie.rating.rating !== null) {
                   updateMovie(selectedCategory);
@@ -486,6 +517,20 @@ const Lists = function Lists() {
               }}
             >
               Save Changes
+            </Button>
+            <Button
+              variant="contained"
+              sx={{ backgroundColor: "#db0000" }}
+              onClick={() => {
+                deleteMovieFromCategory()
+              }}
+            >
+              Delete from Category
+            </Button>
+            <Button variant="contained" sx={{ backgroundColor: "#db0000" }} onClick={()=>{
+                deleteReview()
+            }}>
+              Delete Review
             </Button>
           </Box>
         </Modal>

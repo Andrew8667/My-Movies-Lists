@@ -15,4 +15,9 @@ public class MovieController {
     public ResponseEntity<String> addMovie(@RequestHeader("Authorization") String authHeader, @RequestBody MovieReviewDTO movieReviewDTO){
         return movieService.addMovie(authHeader, movieReviewDTO);
     }
+
+    @DeleteMapping("/delete/{movieId}/{categoryId}")
+    public ResponseEntity<String> deleteMovieFromCategory(@PathVariable long movieId,@PathVariable long categoryId,@RequestHeader("Authorization") String authHeader){
+        return movieService.deleteMovieFromCategory(movieId,categoryId,authHeader);
+    }
 }

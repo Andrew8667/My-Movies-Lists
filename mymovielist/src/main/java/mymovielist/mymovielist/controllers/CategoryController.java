@@ -32,18 +32,13 @@ public class CategoryController {
         return categoryService.createCategory(categoryRequest,authHeader);
     }
 
-    @GetMapping("/getAll")
-    public ResponseEntity<List<CategoryDTO>> getCategories(){
-        return categoryService.getCategories();
-    }
-
     /**
      * Gets the user's categories, the movies inside the categories, and the ratings for those movies
      * @param authHeader contains the jwt token
      * @return the user's categories, the movies inside the categories, and the ratings for those movies in dictionary format
      * null otherwise
      */
-    @GetMapping("getUserCategories")
+    @GetMapping("/getUserCategories")
     public ResponseEntity<List<CategoryMovieRatingDTO>> getUserCategories(@RequestHeader("Authorization") String authHeader){
         return categoryService.getUserCategories(authHeader);
     }

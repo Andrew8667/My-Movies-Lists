@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -88,5 +90,16 @@ public class MovieService {
             ratingService.populateCategoryMovieReviewDTO(movieDTO,movie,user);
             movieDTOS.add(movieDTO);
         }
+    }
+
+    public ResponseEntity<String> deleteMovieFromCategory(long movieId, long categoryId, String authHeader){
+        Optional<Movie> movie = movieRepository.findById(movieId);
+        Optional<Category> category = categoryRepository.findById(categoryId);
+        if(movie.isPresent() && category.isPresent()){
+            movie.get().getCategories().remove(category.get());
+            movieRepository.save(movie.get());
+            return ResponseEntity.ok("Successfully removed movie from category");
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error removing movie from category");
     }
 }

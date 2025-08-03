@@ -40,6 +40,8 @@ const Home = function Home() {
   const [selectedCategories, setSelectedCategories] = useState([]); //the categories selected to add movie to
   const [addModal, setAddModal] = useState(false); //used for if the modal is visible or not
   const [success, setSuccess] = useState(true); //used to monitor if adding movie was successful or not
+  const [hasRating, setHasRating] = useState(false); //if true then the user cannot create review since it already exists
+
   useEffect(() => {
     axios
       .get("http://localhost:8080/category/getUserCategories", {
@@ -54,22 +56,25 @@ const Home = function Home() {
   /**
    * Returns the searched for movie and assigns it to movie
    */
-   const getMovie = async () => {
+  const getMovie = async () => {
     try {
-      const response = await axios.get(`http://localhost:8080/getMovie/${search}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      const response = await axios.get(
+        `http://localhost:8080/getMovie/${search}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
       setMovie(response.data);
-      return response.data; 
+      return response.data;
     } catch (error) {
       setErrorOpen(true);
       console.log(error);
       return null;
     }
   };
-  
+
   const addMovie = async () => {
     try {
       await axios.post(
@@ -95,6 +100,27 @@ const Home = function Home() {
       setSuccess(false);
       setAddModal(true);
     }
+  };
+
+  /**
+   * Gets the stars and description of the rating of the movie if it has already been rated
+   */
+  const getRating = () => {
+    axios
+      .get(`http://localhost:8080/rating/get/${movie[0]}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((response) => {
+        setStars(response.data.rating);
+        setReview(response.data.description);
+        setHasRating(true);
+      })
+      .catch((error) => {
+        setHasRating(false);
+        console.log(error);
+      });
   };
 
   return (
@@ -202,7 +228,10 @@ const Home = function Home() {
             <Button
               variant="contained"
               sx={{ backgroundColor: "#db0000" }}
-              onClick={() => setReviewModalOpen(true)}
+              onClick={() => {
+                setReviewModalOpen(true);
+                getRating();
+              }}
             >
               Add
             </Button>
@@ -231,9 +260,16 @@ const Home = function Home() {
               alignItems: "center",
             }}
           >
+            {hasRating && (
+              <Alert severity="info">
+                You have already rated this movie! If you'd like to edit the
+                rating you can do so in the lists screen
+              </Alert>
+            )}
             <Rating
               value={stars}
               onChange={(e) => setStars(e.target.value)}
+              disabled={hasRating}
               required
             ></Rating>
             <TextField
@@ -243,6 +279,7 @@ const Home = function Home() {
               value={review}
               onChange={(e) => setReview(e.target.value)}
               sx={{ width: "100%" }}
+              disabled={hasRating}
               required
             />
             <FormControl required sx={{ width: "200px" }}>
@@ -263,6 +300,7 @@ const Home = function Home() {
                     },
                   },
                 }}
+                disabled={hasRating}
                 sx={{
                   "& .MuiOutlinedInput-root fieldset": {
                     borderColor: "#000000",
@@ -283,7 +321,7 @@ const Home = function Home() {
             <Button
               variant="contained"
               sx={{ backgroundColor: "#db0000" }}
-              disabled={!movie || movie.length === 0}
+              disabled={hasRating}
               onClick={() => {
                 addMovie();
               }}
@@ -295,7 +333,11 @@ const Home = function Home() {
       )}
       <Modal
         open={errorOpen}
-        onClose={() => setErrorOpen(false)}
+        onClose={() => {
+          setErrorOpen(false)
+          setStars(0)
+          setReview('')//reset the stars and review so it doesn't show up for next movie
+        }}
         sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
       >
         <Alert severity="error">Error finding movie! Please try again</Alert>
