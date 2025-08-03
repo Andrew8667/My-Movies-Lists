@@ -68,12 +68,12 @@ public class RatingService {
         }
     }
 
-    public ResponseEntity<String> updateRating(long movieId, String authHeader, RatingDTO ratingDTO){
+    public ResponseEntity<String> updateRating(String movie, String authHeader, RatingDTO ratingDTO){
         String email = jwtUtil.extractUsername(authHeader.substring(7));
         Optional<User> user = userRepository.findById(email);
-        Optional<Movie> movie = movieRepository.findById(movieId);
-        if(user.isPresent() && movie.isPresent()){
-            Optional<Rating> rating = ratingRepository.findByUserAndMovie(user.get(),movie.get());
+        Optional<Movie> movie1 = movieRepository.findByTitle(movie);
+        if(user.isPresent() && movie1.isPresent()){
+            Optional<Rating> rating = ratingRepository.findByUserAndMovie(user.get(),movie1.get());
             if(rating.isPresent()){
                 rating.get().setRating(ratingDTO.getRating());
                 rating.get().setDescription(ratingDTO.getDescription());

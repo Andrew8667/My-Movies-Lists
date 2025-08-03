@@ -16,11 +16,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class MovieService {
@@ -101,5 +100,61 @@ public class MovieService {
             return ResponseEntity.ok("Successfully removed movie from category");
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error removing movie from category");
+    }
+
+    public ResponseEntity<List<Long>> getMoviesSelectedCategories(String movie,String authHeader){
+        return ResponseEntity.ok(findUsersMovieCategories(movie, authHeader));
+    }
+
+    /**
+     * Updates the categories a movie is in
+     * @param selectedCategoryIds the new set of categories that the movie should be in
+     * @param movie the movie we are updating
+     * @param authHeader contains the jwt token
+     * @return status of update
+     */
+    public ResponseEntity<String> updateSelectedCategories(List<Long> selectedCategoryIds, String movie, String authHeader){
+        List<Long> categoryIds = findUsersMovieCategories(movie, authHeader);
+        Optional<Movie> movie1 = movieRepository.findByTitle(movie);
+        if (movie1.isPresent()){
+            Set<Long> newSelectedCategories = new HashSet<>(selectedCategoryIds);
+            Set<Long> oldSelectedCategories = new HashSet<>(categoryIds);
+            Set<Long> deleteCategories = new HashSet<>(oldSelectedCategories);
+            deleteCategories.removeAll(newSelectedCategories);
+            System.out.println(deleteCategories);
+            deleteCategories.forEach(categoryId->{
+                Optional<Category> category = categoryRepository.findById(categoryId);
+                if(category.isPresent()){
+                    movie1.get().getCategories().remove(category.get());
+                }
+            });
+            Set<Long> addCategories = new HashSet<>(newSelectedCategories);
+            addCategories.removeAll(oldSelectedCategories);
+            System.out.println(addCategories);
+            addCategories.forEach(categoryId->{
+                Optional<Category> category = categoryRepository.findById(categoryId);
+                if(category.isPresent()){
+                    movie1.get().getCategories().add(category.get());
+                }
+            });
+            movieRepository.save(movie1.get());
+        }
+        return ResponseEntity.ok("Updated the selected categories");
+    }
+
+    private List<Long> findUsersMovieCategories(String movie,String authHeader){
+        Optional<Movie> movie1 = movieRepository.findByTitle(movie);
+        String email = jwtUtil.extractUsername(authHeader.substring(7));
+        User user = userRepository.findById(email).orElseThrow();
+        List<Category> categories = categoryRepository.findAllByUser(user);
+        List<Long> categoryIds = new ArrayList<>();
+        if(movie1.isPresent()){
+            categories.forEach(category -> {
+                if(movie1.get().getCategories().contains(category)){
+                    categoryIds.add(category.getId());
+                }
+            });
+        }
+        return categoryIds;
     }
 }

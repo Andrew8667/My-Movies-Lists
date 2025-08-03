@@ -39,7 +39,7 @@ const Home = function Home() {
   const [categoryMovieRating, setCategoryMovieRating] = useState(null); //contains all the user's categories, moves in the categories, and ratings for those movies
   const [selectedCategories, setSelectedCategories] = useState([]); //the categories selected to add movie to
   const [addModal, setAddModal] = useState(false); //used for if the modal is visible or not
-  const [success, setSuccess] = useState(true); //used to monitor if adding movie was successful or not
+  const [messageType,setMessageType] = useState(null); //used to monitor if adding review was successful or not or you updated movie
   const [hasRating, setHasRating] = useState(false); //if true then the user cannot create review since it already exists
 
   useEffect(() => {
@@ -66,6 +66,7 @@ const Home = function Home() {
           },
         }
       );
+      console.log(response.data)
       setMovie(response.data);
       return response.data;
     } catch (error) {
@@ -92,12 +93,12 @@ const Home = function Home() {
           },
         }
       );
-      setSuccess(true);
+      setMessageType('created');
       setReviewModalOpen(false);
       setAddModal(true);
     } catch (error) {
       console.error(error);
-      setSuccess(false);
+      setMessageType('error');
       setAddModal(true);
     }
   };
@@ -119,6 +120,57 @@ const Home = function Home() {
       })
       .catch((error) => {
         setHasRating(false);
+        console.log(error);
+      });
+  };
+
+  const getMoviesSelectedCategories = (movie)=>{
+    axios.get(`http://localhost:8080/movie/getCategories/${movie}`,{
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+    })
+    .then(response=>{
+        console.log(response.data)
+        setSelectedCategories(response.data)
+    })
+    .catch(error=>{
+        console.log(error)
+    })
+  }
+
+  const updateMoviesSelectedCategories = (movie)=>{
+    console.log(selectedCategories)
+    axios.put(`http://localhost:8080/movie/updateCategories/${movie}`,selectedCategories,{
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+    })
+    .then(response=>{
+        console.log(response.data)
+    })
+    .catch(error=>{
+        console.log(error)
+    })
+  }
+
+  const updateMovie = (movie) => {
+    axios
+      .put(
+        `http://localhost:8080/rating/update/${movie}`,
+        {
+          rating: parseInt(stars),
+          description: review,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      )
+      .then((response) => {
+      })
+      .catch((error) => {
         console.log(error);
       });
   };
@@ -231,6 +283,7 @@ const Home = function Home() {
               onClick={() => {
                 setReviewModalOpen(true);
                 getRating();
+                getMoviesSelectedCategories(movie[0])
               }}
             >
               Add
@@ -262,14 +315,12 @@ const Home = function Home() {
           >
             {hasRating && (
               <Alert severity="info">
-                You have already rated this movie! If you'd like to edit the
-                rating you can do so in the lists screen
+                You have already rated this movie! 
               </Alert>
             )}
             <Rating
               value={stars}
               onChange={(e) => setStars(e.target.value)}
-              disabled={hasRating}
               required
             ></Rating>
             <TextField
@@ -279,7 +330,6 @@ const Home = function Home() {
               value={review}
               onChange={(e) => setReview(e.target.value)}
               sx={{ width: "100%" }}
-              disabled={hasRating}
               required
             />
             <FormControl required sx={{ width: "200px" }}>
@@ -300,7 +350,6 @@ const Home = function Home() {
                     },
                   },
                 }}
-                disabled={hasRating}
                 sx={{
                   "& .MuiOutlinedInput-root fieldset": {
                     borderColor: "#000000",
@@ -321,12 +370,18 @@ const Home = function Home() {
             <Button
               variant="contained"
               sx={{ backgroundColor: "#db0000" }}
-              disabled={hasRating}
               onClick={() => {
-                addMovie();
+                if(hasRating){
+                  updateMoviesSelectedCategories(movie[0])
+                  updateMovie(movie[0])
+                  setMessageType('updated')
+                  setAddModal(true)
+                } else {
+                  addMovie();
+                }
               }}
             >
-              Create review
+              {hasRating?"Update":"Create review"}
             </Button>
           </Box>
         </Modal>
@@ -353,10 +408,10 @@ const Home = function Home() {
           alignItems: "center",
         }}
       >
-        <Alert severity={success ? "success" : "error"}>
-          {success
+        <Alert severity={messageType === 'created'  || messageType === 'updated'? "success" : "error"}>
+          {messageType === 'created'
             ? "Movie review successfully created!"
-            : "Error creating movie review. Please try again!"}
+            : messageType === 'error'?"Error creating movie review. Please try again!":"Review successfully updated!"}
         </Alert>
       </Modal>
     </Container>

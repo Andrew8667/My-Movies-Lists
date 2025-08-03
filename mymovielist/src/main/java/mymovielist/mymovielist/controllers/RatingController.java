@@ -14,9 +14,9 @@ public class RatingController {
     @Autowired
     private RatingService ratingService;
 
-    @PutMapping("/update/{movieId}")
-    public ResponseEntity<String> updateRating(@PathVariable long movieId, @RequestHeader("Authorization") String authHeader, @RequestBody RatingDTO ratingDTO){
-        return ratingService.updateRating(movieId,authHeader,ratingDTO);
+    @PutMapping("/update/{movie}")
+    public ResponseEntity<String> updateRating(@PathVariable String movie, @RequestHeader("Authorization") String authHeader, @RequestBody RatingDTO ratingDTO){
+        return ratingService.updateRating(movie,authHeader,ratingDTO);
     }
 
     /**

@@ -20,6 +20,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  MenuItem,
 } from "@mui/material";
 import InfoIcon from "@mui/icons-material/Info";
 import React, { useEffect, useState } from "react";
@@ -46,10 +47,10 @@ const Lists = function Lists() {
   const [movieModalVisible, setMovieModalVisible] = useState(false); //controls the modal that displays the review details for movie
   const [selectedCategory, setSelectedCategory] = useState(null); //the category of movie that was selected
   const [rerender, setRerender] = useState(0); //used to rerender after updated review
-
+  const [selectedCategories, setSelectedCategories] = useState(null); //list of categories selected
   useEffect(() => {
     //find the categories, their movies, and ratings for the users
-    console.log(localStorage.getItem('token'))
+    console.log(localStorage.getItem("token"));
     axios
       .get("http://localhost:8080/category/getUserCategories", {
         headers: {
@@ -168,10 +169,40 @@ const Lists = function Lists() {
       .then((error) => console.log(error));
   };
 
-  const updateMovie = () => {
+  const getMoviesSelectedCategories = (movie)=>{
+    axios.get(`http://localhost:8080/movie/getCategories/${movie}`,{
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+    })
+    .then(response=>{
+        console.log(response.data)
+        setSelectedCategories(response.data)
+    })
+    .catch(error=>{
+        console.log(error)
+    })
+  }
+
+  const updateMoviesSelectedCategories = (movie)=>{
+    console.log(selectedCategories)
+    axios.put(`http://localhost:8080/movie/updateCategories/${movie}`,selectedCategories,{
+        headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+    })
+    .then(response=>{
+        console.log(response.data)
+    })
+    .catch(error=>{
+        console.log(error)
+    })
+  }
+
+  const updateMovie = (movie) => {
     axios
       .put(
-        `http://localhost:8080/rating/update/${selectedMovie.id}`,
+        `http://localhost:8080/rating/update/${movie}`,
         {
           rating: parseInt(stars),
           description: reviewDescription,
@@ -213,33 +244,40 @@ const Lists = function Lists() {
     }
   };
 
-  const deleteMovieFromCategory = ()=>{
-    axios.delete(`http://localhost:8080/movie/delete/${selectedMovie.id}/${selectedCategory}`,{
-        headers: {
+  const deleteMovieFromCategory = () => {
+    axios
+      .delete(
+        `http://localhost:8080/movie/delete/${selectedMovie.id}/${selectedCategory}`,
+        {
+          headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-    })
-    .then(response=>{
-        setRerender(prev=>prev+1)
-        setMovieModalVisible(false)
-    })
-    .catch(error=>console.log(error))
-  }
+        }
+      )
+      .then((response) => {
+        setRerender((prev) => prev + 1);
+        setMovieModalVisible(false);
+      })
+      .catch((error) => console.log(error));
+  };
 
-  const deleteReview = ()=>{
-    axios.delete(`http://localhost:8080/rating/delete/${selectedMovie.id}`,{
+  const deleteReview = () => {
+    axios
+      .delete(`http://localhost:8080/rating/delete/${selectedMovie.id}`, {
         headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-    })
-    .then(response=>{
-        console.log(response)
-        setRerender(prev=>prev+1)
-    })
-    .catch(error=>{
-        console.log(error)
-    })
-  }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((response) => {
+        console.log(response);
+        setRerender((prev) => prev + 1);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+
 
   return (
     <Container
@@ -456,6 +494,7 @@ const Lists = function Lists() {
                       setSelectedMovie(movie);
                       setSelectedCategory(item.id);
                       setMovieModalVisible(true);
+                      getMoviesSelectedCategories(movie.title)
                     }}
                   >
                     <img src={movie.img} height="90%"></img>
@@ -505,12 +544,50 @@ const Lists = function Lists() {
               sx={{ width: "100%" }}
               required
             />
+            <FormControl required sx={{ width: "200px" }}>
+              <InputLabel id="category-label" sx={{ color: "#000000" }}>
+                Choose List(s)
+              </InputLabel>
+              <Select
+                labelId="category-label"
+                multiple
+                value={selectedCategories ?? []}
+                onChange={(e) => {setSelectedCategories(e.target.value)}}
+                label="Choose List(s)"
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      height: "100px",
+                      overflowY: "scroll",
+                    },
+                  },
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root fieldset": {
+                    borderColor: "#000000",
+                  },
+                  border: 1,
+                  borderColor: "#FFFFFF",
+                  borderRadius: 2,
+                  color: "#000000",
+                }}
+              >
+                {categoriesMoviesReviews && Array.isArray(categoriesMoviesReviews) &&
+                  categoriesMoviesReviews.map((category) => 
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.title}
+                    </MenuItem>
+                  )
+                }
+              </Select>
+            </FormControl>
             <Button
               variant="outlined"
               sx={{ color: "#db0000", borderColor: "#db0000" }}
               onClick={() => {
                 if (selectedMovie.rating.rating !== null) {
-                  updateMovie(selectedCategory);
+                  updateMovie(selectedMovie.title);
+                  updateMoviesSelectedCategories(selectedMovie.title)
                 } else {
                   addReview();
                 }
@@ -522,14 +599,18 @@ const Lists = function Lists() {
               variant="contained"
               sx={{ backgroundColor: "#db0000" }}
               onClick={() => {
-                deleteMovieFromCategory()
+                deleteMovieFromCategory();
               }}
             >
               Delete from Category
             </Button>
-            <Button variant="contained" sx={{ backgroundColor: "#db0000" }} onClick={()=>{
-                deleteReview()
-            }}>
+            <Button
+              variant="contained"
+              sx={{ backgroundColor: "#db0000" }}
+              onClick={() => {
+                deleteReview();
+              }}
+            >
               Delete Review
             </Button>
           </Box>
