@@ -1,47 +1,43 @@
 import {
   Container,
   Typography,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Avatar,
   Box,
   TextField,
   Button,
-  Paper,
-  Drawer,
-  ListItem,
-  ListItemText,
-  ListItemButton,
-  Menu,
   MenuItem,
   Modal,
   Rating,
   Select,
   InputLabel,
-  getScopedCssBaselineUtilityClass,
   Alert,
   FormControl,
 } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate, useNavigation } from "react-router-dom";
-import MenuIcon from "@mui/icons-material/Menu";
 import NavigationBar from "../components/NavigationBar";
 
+/**
+ * The home contains a place where users can search for movies
+ * Users can see details about the movie such as the title, poster, and description
+ * They can add or update reviews to the movies
+ * @returns a component for the home page of the app
+ */
 const Home = function Home() {
-  const [search, setSearch] = useState(""); //input inside the enter movie title field
-  const [movie, setMovie] = useState(null); //movie that was searched for
-  const [errorOpen, setErrorOpen] = useState(false); //controls visibilty status of error message
-  const [reviewModalOpen, setReviewModalOpen] = useState(false); //the modal used to add review
+  const [search, setSearch] = useState(""); //the text in the search for movies field
+  const [movie, setMovie] = useState(null); //movie returned from the search
+  const [errorOpen, setErrorOpen] = useState(false); //open status of modal containing error status for movie search
+  const [reviewModalOpen, setReviewModalOpen] = useState(false); //the modal to input review details
   const [stars, setStars] = useState(0); //default number of stars for review
   const [review, setReview] = useState(""); //review assocaited with rating
   const [categoryMovieRating, setCategoryMovieRating] = useState(null); //contains all the user's categories, moves in the categories, and ratings for those movies
-  const [selectedCategories, setSelectedCategories] = useState([]); //the categories selected to add movie to
-  const [addModal, setAddModal] = useState(false); //used for if the modal is visible or not
-  const [messageType,setMessageType] = useState(null); //used to monitor if adding review was successful or not or you updated movie
-  const [hasRating, setHasRating] = useState(false); //if true then the user cannot create review since it already exists
+  const [selectedCategories, setSelectedCategories] = useState([]); //the categories the user wants the movie to be in
+  const [reviewStatusModal, setReviewStatusModal] = useState(false); //open status of modal containing the status of creating or updating review
+  const [messageType, setMessageType] = useState(null); //adding review can either be 'error' or 'created' and updating is 'updated'
+  const [hasRating, setHasRating] = useState(false); //determines if the current movie was already rated by user or not
 
+  /**
+   * Populates categoryMovieRating to contain all the user's categories, the movies inside, and the user's ratings of the movies
+   */
   useEffect(() => {
     axios
       .get("http://localhost:8080/category/getUserCategories", {
@@ -54,7 +50,9 @@ const Home = function Home() {
   }, []);
 
   /**
-   * Returns the searched for movie and assigns it to movie
+   * Gets the movie that the user searches for from OMDb api
+   * Sets movie state with the resulting search
+   * Movie is used to display movie details
    */
   const getMovie = async () => {
     try {
@@ -66,19 +64,21 @@ const Home = function Home() {
           },
         }
       );
-      console.log(response.data)
       setMovie(response.data);
       return response.data;
     } catch (error) {
-      setErrorOpen(true);
+      setErrorOpen(true); //display error finding movie message
       console.log(error);
       return null;
     }
   };
 
+  /**
+   * Adds review to the movie if user hasn't already made one
+   */
   const addMovie = async () => {
-    try {
-      await axios.post(
+    axios
+      .post(
         "http://localhost:8080/movie/add",
         {
           title: movie[0],
@@ -92,15 +92,17 @@ const Home = function Home() {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
-      );
-      setMessageType('created');
-      setReviewModalOpen(false);
-      setAddModal(true);
-    } catch (error) {
-      console.error(error);
-      setMessageType('error');
-      setAddModal(true);
-    }
+      )
+      .then((response) => {
+        setMessageType("created");
+        setReviewModalOpen(false);
+        setReviewStatusModal(true);
+      })
+      .catch((error) => {
+        console.error(error);
+        setMessageType("error");
+        setReviewStatusModal(true);
+      });
   };
 
   /**
@@ -120,40 +122,58 @@ const Home = function Home() {
       })
       .catch((error) => {
         setHasRating(false);
+        setStars(0)
+        setReview('')
         console.log(error);
       });
   };
 
-  const getMoviesSelectedCategories = (movie)=>{
-    axios.get(`http://localhost:8080/movie/getCategories/${movie}`,{
+  /**
+   * Finds the user's categories that are associated with the provided movie
+   * @param {*} movie the title of the movie
+   */
+  const getMoviesSelectedCategories = (movie) => {
+    axios
+      .get(`http://localhost:8080/movie/getCategories/${movie}`, {
         headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((response) => {
+        setSelectedCategories(response.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
+
+  /**
+   * Updates the categories that the user's movie is in
+   * @param {*} movie title of movie we want to update
+   */
+  const updateMoviesSelectedCategories = (movie) => {
+    axios
+      .put(
+        `http://localhost:8080/movie/updateCategories/${movie}`,
+        selectedCategories,
+        {
+          headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-    })
-    .then(response=>{
-        console.log(response.data)
-        setSelectedCategories(response.data)
-    })
-    .catch(error=>{
-        console.log(error)
-    })
-  }
+        }
+      )
+      .then((response) => {
+        console.log(response.data);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  };
 
-  const updateMoviesSelectedCategories = (movie)=>{
-    console.log(selectedCategories)
-    axios.put(`http://localhost:8080/movie/updateCategories/${movie}`,selectedCategories,{
-        headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-    })
-    .then(response=>{
-        console.log(response.data)
-    })
-    .catch(error=>{
-        console.log(error)
-    })
-  }
-
+  /**
+   * Updates the stars and review of the movie
+   * @param {*} movie title of movie we want to update
+   */
   const updateMovie = (movie) => {
     axios
       .put(
@@ -169,6 +189,7 @@ const Home = function Home() {
         }
       )
       .then((response) => {
+        console.log(response)
       })
       .catch((error) => {
         console.log(error);
@@ -200,7 +221,7 @@ const Home = function Home() {
         }}
       >
         <TextField
-          label="Enter movie title"
+          label="Enter movie title(max 255 characters)"
           InputProps={{
             style: { color: "#FFFFFF" },
           }}
@@ -283,7 +304,7 @@ const Home = function Home() {
               onClick={() => {
                 setReviewModalOpen(true);
                 getRating();
-                getMoviesSelectedCategories(movie[0])
+                getMoviesSelectedCategories(movie[0]);
               }}
             >
               Add
@@ -294,7 +315,9 @@ const Home = function Home() {
       {movie && (
         <Modal
           open={reviewModalOpen}
-          onClose={() => setReviewModalOpen(false)}
+          onClose={() => {
+            setReviewModalOpen(false)
+          }}
           sx={{
             display: "flex",
             justifyContent: "center",
@@ -314,9 +337,7 @@ const Home = function Home() {
             }}
           >
             {hasRating && (
-              <Alert severity="info">
-                You have already rated this movie! 
-              </Alert>
+              <Alert severity="info">You have already rated this movie!</Alert>
             )}
             <Rating
               value={stars}
@@ -324,7 +345,7 @@ const Home = function Home() {
               required
             ></Rating>
             <TextField
-              label="Add review here"
+              label="Add review here(max 255 characters)"
               multiline
               rows={6}
               value={review}
@@ -371,17 +392,17 @@ const Home = function Home() {
               variant="contained"
               sx={{ backgroundColor: "#db0000" }}
               onClick={() => {
-                if(hasRating){
-                  updateMoviesSelectedCategories(movie[0])
-                  updateMovie(movie[0])
-                  setMessageType('updated')
-                  setAddModal(true)
+                if (hasRating) { //rating already exists for that movie
+                  updateMoviesSelectedCategories(movie[0]);
+                  updateMovie(movie[0]);
+                  setMessageType("updated");
+                  setReviewStatusModal(true);
                 } else {
                   addMovie();
                 }
               }}
             >
-              {hasRating?"Update":"Create review"}
+              {hasRating ? "Update" : "Create review"}
             </Button>
           </Box>
         </Modal>
@@ -389,17 +410,17 @@ const Home = function Home() {
       <Modal
         open={errorOpen}
         onClose={() => {
-          setErrorOpen(false)
-          setStars(0)
-          setReview('')//reset the stars and review so it doesn't show up for next movie
+          setErrorOpen(false);
+          setStars(0);
+          setReview(""); //reset the stars and review so it doesn't show up for next movie
         }}
         sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}
       >
         <Alert severity="error">Error finding movie! Please try again</Alert>
       </Modal>
       <Modal
-        open={addModal}
-        onClose={() => setAddModal(false)}
+        open={reviewStatusModal}
+        onClose={() => setReviewStatusModal(false)}
         sx={{
           width: "100%",
           height: "100%",
@@ -408,10 +429,18 @@ const Home = function Home() {
           alignItems: "center",
         }}
       >
-        <Alert severity={messageType === 'created'  || messageType === 'updated'? "success" : "error"}>
-          {messageType === 'created'
+        <Alert
+          severity={
+            messageType === "created" || messageType === "updated"
+              ? "success"
+              : "error"
+          }
+        >
+          {messageType === "created"
             ? "Movie review successfully created!"
-            : messageType === 'error'?"Error creating movie review. Please try again!":"Review successfully updated!"}
+            : messageType === "error"
+            ? "Error creating movie review. Please try again!"
+            : "Review successfully updated!"}
         </Alert>
       </Modal>
     </Container>

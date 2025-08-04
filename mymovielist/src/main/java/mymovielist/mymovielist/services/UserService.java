@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import java.util.Optional;
 
 /**
- * Handles business logic for the UserController
+ * Service class to handle the business logic that process the requests involving user entity
  * @author Andrew Gee
  */
 @Service

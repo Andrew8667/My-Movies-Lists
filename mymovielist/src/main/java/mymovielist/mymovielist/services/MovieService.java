@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.*;
 
+/**
+ * Service class to handle the business logic that process the requests involving movie
+ * @author Andrew Gee
+ */
 @Service
 public class MovieService {
     @Autowired
@@ -35,20 +39,22 @@ public class MovieService {
     private UserRepository userRepository;
     @Autowired
     private JwtUtil jwtUtil;
+
+    /**
+     * Adds movie, its review, and its categories to db
+     * @param authHeader contains the jwt token
+     * @param movieReviewDTO contains the movie info, rating info, and categories the movie belongs to
+     * @return success string if movie is successfully added, error otherwise
+     */
     public ResponseEntity<String> addMovie(String authHeader, MovieReviewDTO movieReviewDTO){
         Optional<Movie> movie = movieRepository.findByTitle(movieReviewDTO.getTitle());
-        Optional<User> user = userRepository.findById(jwtUtil.extractUsername(authHeader.substring(7)));
+        User user = userRepository.findById(jwtUtil.extractUsername(authHeader.substring(7))).orElseThrow();
         if(movie.isPresent()){
-            if(!ratingRepository.existsByUserAndMovie(user.get(),movie.get())){
-                Rating rating = new Rating();
-                rating.setRatingKey(new RatingKey(user.get().getEmail(),movie.get().getId()));
-                rating.setUser(user.get());
-                rating.setMovie(movie.get());
-                rating.setRating(movieReviewDTO.getStars());
-                rating.setDescription(movieReviewDTO.getReview());
+            if(!ratingRepository.existsByUserAndMovie(user,movie.get())){
+                Rating rating = new Rating(new RatingKey(user.getEmail(),movie.get().getId()),movieReviewDTO.getStars(),movieReviewDTO.getReview(),user,movie.get());
                 movieReviewDTO.getCategories().forEach(id->{
-                    Optional<Category> category = categoryRepository.findById(id);
-                    movie.get().getCategories().add(category.get());
+                    Category category = categoryRepository.findById(id).orElseThrow();
+                    movie.get().getCategories().add(category);
                 });
                 ratingRepository.save(rating);
                 return ResponseEntity.ok("Successfully added review");
@@ -59,16 +65,11 @@ public class MovieService {
             newMovie.setImg(movieReviewDTO.getImg());
             newMovie.setCategories(new ArrayList<>());
             movieReviewDTO.getCategories().forEach(id->{
-                Optional<Category> category = categoryRepository.findById(id);
-                newMovie.getCategories().add(category.get());
+                Category category = categoryRepository.findById(id).orElseThrow();
+                newMovie.getCategories().add(category);
             });
             movieRepository.save(newMovie);
-            Rating rating = new Rating();
-            rating.setDescription(movieReviewDTO.getReview());
-            rating.setRating(movieReviewDTO.getStars());
-            rating.setUser(user.get());
-            rating.setMovie(newMovie);
-            rating.setRatingKey(new RatingKey(user.get().getEmail(),newMovie.getId()));
+            Rating rating = new Rating(new RatingKey(user.getEmail(),newMovie.getId()),movieReviewDTO.getStars(),movieReviewDTO.getReview(),user,newMovie);
             ratingRepository.save(rating);
             return ResponseEntity.ok("Successfully added movie");
         }
@@ -76,21 +77,27 @@ public class MovieService {
     }
 
     /**
-     * Populates the movies for each category
-     * @param movieDTOS contains essential info such as the movie id, title, and img
-     * @param category the movie belongs to
+     * Populates the movies for each category in the categoryMovieReviewDTO
+     * @param movieDTOS the category's list of movies
+     * @param category that the movie belongs to
      * @param user of the current session
      */
     public void populateCategoryMovieReviewDTO(List<MovieDTO> movieDTOS, Category category, User user){
         List<Movie> movies = movieRepository.findAllByCategories(category);
-        for(int i = 0 ; i < movies.size() ; i++){
-            Movie movie = movies.get(i);
+        movies.forEach(movie -> {
             MovieDTO movieDTO = new MovieDTO(movie.getId(),movie.getImg(),movie.getTitle(), new RatingDTO());
             ratingService.populateCategoryMovieReviewDTO(movieDTO,movie,user);
             movieDTOS.add(movieDTO);
-        }
+        });
     }
 
+    /**
+     * Deletes a movie from a category
+     * @param movieId identification number of the movie we want to remove from category
+     * @param categoryId identification number of the category we want to remove movie from
+     * @param authHeader contains the jwt token
+     * @return response entity containing status of the deletion
+     */
     public ResponseEntity<String> deleteMovieFromCategory(long movieId, long categoryId, String authHeader){
         Optional<Movie> movie = movieRepository.findById(movieId);
         Optional<Category> category = categoryRepository.findById(categoryId);
@@ -102,6 +109,12 @@ public class MovieService {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error removing movie from category");
     }
 
+    /**
+     * Used to find the list of category ids for the categories a movie is in for a user
+     * @param movie we want the categories for
+     * @param authHeader contains the jwt token
+     * @return a list of category ids of the categories that have the movie
+     */
     public ResponseEntity<List<Long>> getMoviesSelectedCategories(String movie,String authHeader){
         return ResponseEntity.ok(findUsersMovieCategories(movie, authHeader));
     }
@@ -117,31 +130,31 @@ public class MovieService {
         List<Long> categoryIds = findUsersMovieCategories(movie, authHeader);
         Optional<Movie> movie1 = movieRepository.findByTitle(movie);
         if (movie1.isPresent()){
-            Set<Long> newSelectedCategories = new HashSet<>(selectedCategoryIds);
-            Set<Long> oldSelectedCategories = new HashSet<>(categoryIds);
-            Set<Long> deleteCategories = new HashSet<>(oldSelectedCategories);
+            Set<Long> newSelectedCategories = new HashSet<>(selectedCategoryIds);//new list of categories movie should be in
+            Set<Long> oldSelectedCategories = new HashSet<>(categoryIds); //old list of categories movies should be in
+            Set<Long> deleteCategories = new HashSet<>(oldSelectedCategories); //categories in old that aren't in new
             deleteCategories.removeAll(newSelectedCategories);
-            System.out.println(deleteCategories);
             deleteCategories.forEach(categoryId->{
-                Optional<Category> category = categoryRepository.findById(categoryId);
-                if(category.isPresent()){
-                    movie1.get().getCategories().remove(category.get());
-                }
+                Category category = categoryRepository.findById(categoryId).orElseThrow();
+                movie1.get().getCategories().remove(category);
             });
-            Set<Long> addCategories = new HashSet<>(newSelectedCategories);
+            Set<Long> addCategories = new HashSet<>(newSelectedCategories);//categories in new that aren't in old
             addCategories.removeAll(oldSelectedCategories);
-            System.out.println(addCategories);
             addCategories.forEach(categoryId->{
-                Optional<Category> category = categoryRepository.findById(categoryId);
-                if(category.isPresent()){
-                    movie1.get().getCategories().add(category.get());
-                }
+                Category category = categoryRepository.findById(categoryId).orElseThrow();
+                movie1.get().getCategories().add(category);
             });
             movieRepository.save(movie1.get());
         }
         return ResponseEntity.ok("Updated the selected categories");
     }
 
+    /**
+     * Helper method used to find the list of category ids for the categories a movie is in for a user
+     * @param movie we want the categories for
+     * @param authHeader contains the jwt token
+     * @return a list of category ids of the categories that have the movie
+     */
     private List<Long> findUsersMovieCategories(String movie,String authHeader){
         Optional<Movie> movie1 = movieRepository.findByTitle(movie);
         String email = jwtUtil.extractUsername(authHeader.substring(7));

@@ -14,14 +14,12 @@ import java.util.Optional;
  * @author Andrew Gee
  */
 public interface CategoryRepository extends JpaRepository<Category,Long>{
-    public List<Category> findAllByUser(User user);
-
     /**
-     * Finds the category by its title
-     * @param title of category we want to find
-     * @return category if found, null otherwise
+     * Finds all the categories by the user provided
+     * @param user we want categories for
+     * @return a list of categories
      */
-    public Optional<Category> findByTitle(String title);
+    public List<Category> findAllByUser(User user);
     /**
      * Checks if there is entry in category table with corresponding title and user
      * @param title of the category

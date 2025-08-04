@@ -1,19 +1,28 @@
 package mymovielist.mymovielist.controllers;
 
 import mymovielist.mymovielist.dto.RatingDTO;
-import mymovielist.mymovielist.dto.RatingRequest;
-import mymovielist.mymovielist.entities.Rating;
 import mymovielist.mymovielist.services.RatingService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ *  Controller for processing GET, POST, PUT, and DELETE requests involving rating entity
+ * @author Andrew Gee
+ */
 @RestController
 @RequestMapping("/rating")
 public class RatingController {
     @Autowired
     private RatingService ratingService;
 
+    /**
+     * Updates the stars and review of a rating
+     * @param movie we want to update rating for
+     * @param authHeader contains jwt token
+     * @param ratingDTO has the new stars and review
+     * @return response entity of the status of the update
+     */
     @PutMapping("/update/{movie}")
     public ResponseEntity<String> updateRating(@PathVariable String movie, @RequestHeader("Authorization") String authHeader, @RequestBody RatingDTO ratingDTO){
         return ratingService.updateRating(movie,authHeader,ratingDTO);

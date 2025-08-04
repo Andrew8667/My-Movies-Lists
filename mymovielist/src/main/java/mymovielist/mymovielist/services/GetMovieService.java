@@ -12,7 +12,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Provides the logic for retrieving item from OMDb movie api
+ * Service class to handle the business logic that process the requests involving retrieving movies from OMDb api
+ * @author Andrew Gee
  */
 @Service
 public class GetMovieService {

@@ -5,6 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * Used to run the backend
+ * @author Andrew Gee
  */
 @SpringBootApplication
 public class MyMoviesListApplication {

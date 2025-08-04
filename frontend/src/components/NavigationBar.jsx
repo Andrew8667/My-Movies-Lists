@@ -8,7 +8,6 @@ import {
   ListItemButton,
   Menu,
   MenuItem,
-  Popover,
   Typography,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -19,6 +18,11 @@ import { useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+/**
+ * The navigation bar contains a drawer for the screens, title, and profile icon
+ * Users can navigate to other screens using the drawer and logout by clicking on the profile icon
+ * @returns a navigation feature at top of each screen
+ */
 const NavigationBar = function NavigationBar() {
   const [drawerOpen, setDrawerOpen] = useState(false); //controls visibility of drawer
   const [user, setUser] = useState(null); //the user of the session

@@ -23,6 +23,10 @@ import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service class to handle the business logic that process the requests involving rating
+ * @author Andrew Gee
+ */
 @Service
 public class RatingService {
     @Autowired
@@ -36,27 +40,9 @@ public class RatingService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public ResponseEntity<String> addRating(String movieName,RatingDTO ratingDTO, String authHeader){
-        Rating newRating = new Rating();
-        String email = jwtUtil.extractUsername(authHeader.substring(7));
-        Optional<User> user = userRepository.findById(email);
-        Optional<Movie> movie = movieRepository.findByTitle(movieName);
-        newRating.setDescription(ratingDTO.getDescription());
-        newRating.setRating(ratingDTO.getRating());
-        if(user.isPresent() && movie.isPresent()){
-            newRating.setMovie(movie.get());
-            newRating.setUser(user.get());
-            RatingKey ratingKey = new RatingKey(user.get().getEmail(),movie.get().getId());
-            newRating.setRatingKey(ratingKey);
-        }
-
-        ratingRepository.save(newRating);
-        return ResponseEntity.ok("Added rating successfully");
-    }
-
     /**
-     * Populates the reviews for each of the movies
-     * @param movieDTO contains essential info such as the movie id, title, and img
+     * Populates the review of a movie for a user
+     * @param movieDTO the movie object we want to add the review to
      * @param movie that the review is for
      * @param user of the session
      */
@@ -68,6 +54,13 @@ public class RatingService {
         }
     }
 
+    /**
+     * Updates the stars and review of a rating
+     * @param movie we want to update rating for
+     * @param authHeader contains jwt token
+     * @param ratingDTO has the new stars and review
+     * @return response entity of the status of the update
+     */
     public ResponseEntity<String> updateRating(String movie, String authHeader, RatingDTO ratingDTO){
         String email = jwtUtil.extractUsername(authHeader.substring(7));
         Optional<User> user = userRepository.findById(email);

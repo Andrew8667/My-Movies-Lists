@@ -1,18 +1,10 @@
 import {
   Container,
   Typography,
-  AppBar,
-  Toolbar,
   IconButton,
-  Avatar,
   Box,
   TextField,
   Button,
-  Paper,
-  Drawer,
-  ListItem,
-  ListItemText,
-  ListItemButton,
   Modal,
   Popover,
   Alert,
@@ -25,12 +17,15 @@ import {
 import InfoIcon from "@mui/icons-material/Info";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate, useNavigation } from "react-router-dom";
-import MenuIcon from "@mui/icons-material/Menu";
 import NavigationBar from "../components/NavigationBar";
 
+/**
+ * This screen contains option for user's to create their own movie lists that can be edited and deleted
+ * In each list, you can see the poster of the movies you've rated and their star rating underneath the poster
+ * Clicking on the poster will allow you to edit the details of the rating
+ * @returns a screen containing user's movie lists
+ */
 const Lists = function Lists() {
-  const navigate = useNavigate();
   const [listModal, setListModal] = useState(false); //visibilty of modal for creating new list
   const [isCreate, setIsCreate] = useState(true); //decides what the modal dealing with list should display: edit or delete screen
   const [listName, setListName] = useState(""); //the name of the list to be added
@@ -48,9 +43,11 @@ const Lists = function Lists() {
   const [selectedCategory, setSelectedCategory] = useState(null); //the category of movie that was selected
   const [rerender, setRerender] = useState(0); //used to rerender after updated review
   const [selectedCategories, setSelectedCategories] = useState(null); //list of categories selected
+  
+  /**
+   * Find the categories, their movies, and ratings for the users
+   */
   useEffect(() => {
-    //find the categories, their movies, and ratings for the users
-    console.log(localStorage.getItem("token"));
     axios
       .get("http://localhost:8080/category/getUserCategories", {
         headers: {
@@ -66,6 +63,9 @@ const Lists = function Lists() {
       });
   }, [rerender]);
 
+  /**
+   * Whenever selected movie changes, the star and reviewDescription states are updated to match the selected movie
+   */
   useEffect(() => {
     if (selectedMovie) {
       setStars(selectedMovie.rating.rating);
@@ -112,7 +112,7 @@ const Lists = function Lists() {
   };
 
   /**
-   * Handles when user tries creating new list
+   * Handles attempts to update list details such as title and description
    */
   const editList = () => {
     axios
@@ -129,21 +129,11 @@ const Lists = function Lists() {
         }
       )
       .then((response) => {
-        console.log(response.data);
-        setCategoriesMoviesReviews((prev) =>
-          prev.map((category) =>
-            category.id === editId
-              ? {
-                  ...category,
-                  title: listName,
-                  description: description,
-                }
-              : category
-          )
-        );
+        console.log(response)
         setListName("");
         setDescription("");
         setListModal(false);
+        setRerender(prev=>prev+1)
       })
       .catch((error) => {
         console.log(error);
@@ -151,7 +141,8 @@ const Lists = function Lists() {
   };
 
   /**
-   * Handles the deletion of the list and the removal of the list from the movies
+   * Handles the deletion of the list
+   * When list is deleted, the association between that list and movie is severed
    */
   const deleteList = (deleteListId) => {
     axios
@@ -161,7 +152,6 @@ const Lists = function Lists() {
         },
       })
       .then((response) => {
-        console.log(response);
         setCategoriesMoviesReviews((prev) =>
           prev.filter((item) => item.id !== deleteListId)
         );
@@ -169,6 +159,10 @@ const Lists = function Lists() {
       .then((error) => console.log(error));
   };
 
+  /**
+   * Finds the categories that the movie originally belonged to
+   * @param {*} movie the title of the movie 
+   */
   const getMoviesSelectedCategories = (movie)=>{
     axios.get(`http://localhost:8080/movie/getCategories/${movie}`,{
         headers: {
@@ -176,7 +170,6 @@ const Lists = function Lists() {
           },
     })
     .then(response=>{
-        console.log(response.data)
         setSelectedCategories(response.data)
     })
     .catch(error=>{
@@ -184,6 +177,10 @@ const Lists = function Lists() {
     })
   }
 
+  /**
+   * Updates the movie to contain the updated categories the movie belongs to
+   * @param {*} movie title of the movie
+   */
   const updateMoviesSelectedCategories = (movie)=>{
     console.log(selectedCategories)
     axios.put(`http://localhost:8080/movie/updateCategories/${movie}`,selectedCategories,{
@@ -199,6 +196,10 @@ const Lists = function Lists() {
     })
   }
 
+  /**
+   * Updates the stars and description of the rating for the movie
+   * @param {*} movie title of the movie
+   */
   const updateMovie = (movie) => {
     axios
       .put(
@@ -221,29 +222,9 @@ const Lists = function Lists() {
       });
   };
 
-  const addReview = async () => {
-    try {
-      await axios.post(
-        "http://localhost:8080/movie/add",
-        {
-          title: selectedMovie.title,
-          img: selectedMovie.img,
-          stars: stars,
-          review: reviewDescription,
-          categories: [],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      console.log("success");
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
+  /**
+   * Removes the movie from selected category
+   */
   const deleteMovieFromCategory = () => {
     axios
       .delete(
@@ -261,6 +242,9 @@ const Lists = function Lists() {
       .catch((error) => console.log(error));
   };
 
+  /**
+   * When a user deletes a review for a movie, find all of the users lists and delete the lists from that movie
+   */
   const deleteReview = () => {
     axios
       .delete(`http://localhost:8080/rating/delete/${selectedMovie.id}`, {
@@ -276,8 +260,6 @@ const Lists = function Lists() {
         console.log(error);
       });
   };
-
-
 
   return (
     <Container
@@ -335,14 +317,14 @@ const Lists = function Lists() {
           }}
         >
           <TextField
-            label="List Title"
+            label="List Title(max 255 characters)"
             value={listName}
             onChange={(e) => setListName(e.target.value)}
             sx={{ width: "100%" }}
             required
           />
           <TextField
-            label="Add list description here"
+            label="Add list description here(max 255 characters)"
             multiline
             rows={6}
             value={description}
@@ -440,6 +422,8 @@ const Lists = function Lists() {
                     setListModal(true);
                     setIsCreate(false);
                     setEditId(item.id);
+                    setListName(categoriesMoviesReviews.find(category=>category.id===item.id).title);
+                    setDescription(categoriesMoviesReviews.find(category=>category.id===item.id).description)
                   }}
                 >
                   Edit
@@ -461,6 +445,9 @@ const Lists = function Lists() {
                 anchorOrigin={{
                   vertical: "top",
                   horizontal: "right",
+                }}
+                sx={{
+                    width:'700px'
                 }}
               >
                 {displayedDescription}
@@ -536,7 +523,7 @@ const Lists = function Lists() {
               required
             ></Rating>
             <TextField
-              label="Add review here"
+              label="Add review here(max 255 characters)"
               value={reviewDescription ?? ""}
               onChange={(e) => setReviewDescription(e.target.value)}
               multiline
@@ -588,9 +575,7 @@ const Lists = function Lists() {
                 if (selectedMovie.rating.rating !== null) {
                   updateMovie(selectedMovie.title);
                   updateMoviesSelectedCategories(selectedMovie.title)
-                } else {
-                  addReview();
-                }
+                } 
               }}
             >
               Save Changes

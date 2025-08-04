@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Service class to handle the business logic that process the requests involving category
+ * @author Andrew Gee
+ */
 @Service
 public class CategoryService {
     @Autowired
@@ -36,14 +40,13 @@ public class CategoryService {
     private MovieRepository movieRepository;
 
     /**
-     * Creates a new category
+     * Creates a new category for the user
      * @param categoryRequest contains the title and description of the new category
      * @param authHeader contains jwt token
      * @return response entity with the newly created category DTO, null if it can't be created
      */
     public ResponseEntity<CategoryDTO> createCategory(CategoryRequest categoryRequest, String authHeader){
-        String token = authHeader.substring(7);
-        String email = jwtUtil.extractUsername(token);
+        String email = jwtUtil.extractUsername(authHeader.substring(7));
         Optional<User> user = userRepository.findById(email);
         if(user.isPresent()){
             //check if category title already exists for user
@@ -69,30 +72,21 @@ public class CategoryService {
     public ResponseEntity<List<CategoryMovieRatingDTO>> getUserCategories(String authHeader){
         String email = jwtUtil.extractUsername(authHeader.substring(7)); //extract email from the token
         Optional<User> user = userRepository.findById(email);
-        if(!userRepository.existsById(email)){
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        if(user.isPresent()){
+            List<Category> categories = categoryRepository.findAllByUser(user.get());
+            List<CategoryMovieRatingDTO> categoryMovieRatingDTOS = new ArrayList<>();
+            categories.forEach(category->{
+                CategoryMovieRatingDTO categoryMovieRatingDTO = new CategoryMovieRatingDTO();
+                categoryMovieRatingDTO.setId(category.getId());
+                categoryMovieRatingDTO.setTitle(category.getTitle());
+                categoryMovieRatingDTO.setDescription(category.getDescription());
+                categoryMovieRatingDTO.setMovies(new ArrayList<>());
+                movieService.populateCategoryMovieReviewDTO(categoryMovieRatingDTO.getMovies(),category,user.get()); //populate the movies in the category
+                categoryMovieRatingDTOS.add(categoryMovieRatingDTO);
+            });
+            return ResponseEntity.ok(categoryMovieRatingDTOS);
         }
-        List<Category> categories = categoryRepository.findAllByUser(user.get());
-        List<CategoryMovieRatingDTO> categoryMovieRatingDTOS = new ArrayList<>();
-        for(int i = 0 ; i< categories.size() ; i++){
-            CategoryMovieRatingDTO categoryMovieRatingDTO = new CategoryMovieRatingDTO();
-            categoryMovieRatingDTO.setId(categories.get(i).getId());
-            categoryMovieRatingDTO.setTitle(categories.get(i).getTitle());
-            categoryMovieRatingDTO.setDescription(categories.get(i).getDescription());
-            categoryMovieRatingDTO.setMovies(new ArrayList<>());
-            movieService.populateCategoryMovieReviewDTO(categoryMovieRatingDTO.getMovies(),categories.get(i),user.get());
-            categoryMovieRatingDTOS.add(categoryMovieRatingDTO);
-        }
-        return ResponseEntity.ok(categoryMovieRatingDTOS);
-    }
-
-    public ResponseEntity<CategoryDTO> getCategory(Long id){
-        Optional<Category> category = categoryRepository.findById(id);
-        if(category.isPresent()){
-            CategoryDTO categoryDTO = new CategoryDTO(category.get().getId(),category.get().getTitle(),category.get().getDescription(),category.get().getUser().getEmail());
-            return ResponseEntity.ok(categoryDTO);
-        }
-        return ResponseEntity.badRequest().body(null);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
     }
 
     /**
@@ -106,18 +100,27 @@ public class CategoryService {
         Optional<Category> category = categoryRepository.findById(id);
         Optional<User> user = userRepository.findById(jwtUtil.extractUsername(token));
         if(category.isPresent() && user.isPresent()) {
-            if (!categoryRepository.existsByTitleAndUser(categoryRequest.getTitle(),user.get())){
-                category.get().setTitle(categoryRequest.getTitle());
+            //if titles are the same
+            if(category.get().getTitle().equals(categoryRequest.getTitle())){
+                //perform update
                 category.get().setDescription(categoryRequest.getDescription());
                 categoryRepository.save(category.get());
                 return ResponseEntity.ok("Successfully updated category title");
+            } else {
+                //check to see if the new title already exists
+                if (!categoryRepository.existsByTitleAndUser(categoryRequest.getTitle(),user.get())){ //don't want to create duplicate categories
+                    category.get().setTitle(categoryRequest.getTitle());
+                    category.get().setDescription(categoryRequest.getDescription());
+                    categoryRepository.save(category.get());
+                    return ResponseEntity.ok("Successfully updated category title");
+                }
             }
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Could not find category to update");
     }
 
     /**
-     * Deletes a users category and the categories from the movie
+     * Deletes a users category and removes the movies from the categories
      * @param id of the category we want to remove
      * @return a response entity with http status
      */

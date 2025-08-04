@@ -13,6 +13,10 @@ import mymovielist.mymovielist.services.CategoryService;
 
 import java.util.List;
 
+/**
+ * Controller responsible for GET,PUT,POST, and DELETE requests about category entity
+ * @author Andrew Gee
+ */
 @RestController
 @RequestMapping("/category")
 public class CategoryController {
@@ -22,7 +26,7 @@ public class CategoryController {
     private CategoryRepository categoryRepository;
 
     /**
-     * Creates a new category
+     * Creates a new category for the user
      * @param categoryRequest contains the title and description of the new category
      * @param authHeader contains jwt token
      * @return response entity with the newly created category, null if it can't be created
@@ -43,11 +47,6 @@ public class CategoryController {
         return categoryService.getUserCategories(authHeader);
     }
 
-    @GetMapping("/get/{id}")
-    public ResponseEntity<CategoryDTO> getCategory(@PathVariable("id") Long id){
-        return categoryService.getCategory(id);
-    }
-
     /**
      * Updates the category's title and description
      * @param authHeader authorization header
@@ -60,6 +59,11 @@ public class CategoryController {
         return categoryService.updateCategoryTitleDesc(authHeader.substring(7), id,categoryRequest);
     }
 
+    /**
+     * Deletes the category given the category's id
+     * @param id identification number of the category we want to delete
+     * @return the status of the deletion
+     */
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteCategory(@PathVariable("id") Long id){
         return categoryService.deleteCategory(id);
