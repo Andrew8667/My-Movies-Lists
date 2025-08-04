@@ -575,6 +575,7 @@ const Lists = function Lists() {
                 if (selectedMovie.rating.rating !== null) {
                   updateMovie(selectedMovie.title);
                   updateMoviesSelectedCategories(selectedMovie.title)
+                  setMovieModalVisible(false);
                 } 
               }}
             >
@@ -585,6 +586,7 @@ const Lists = function Lists() {
               sx={{ backgroundColor: "#db0000" }}
               onClick={() => {
                 deleteMovieFromCategory();
+                setMovieModalVisible(false);
               }}
             >
               Delete from Category
@@ -594,6 +596,7 @@ const Lists = function Lists() {
               sx={{ backgroundColor: "#db0000" }}
               onClick={() => {
                 deleteReview();
+                setMovieModalVisible(false);
               }}
             >
               Delete Review
