@@ -2,13 +2,7 @@
 
 ## Introduction / Summary
 
-**My Movies Lists** is a full-stack web application built with **React (Vite)** and **Java Spring Boot**, using **MySQL** for data persistence.  
-Motivated by my passion for movies and reviewing, this app enables users to:
-
-- Explore a vast catalog of movies  
-- View detailed movie information  
-- Rate and review films  
-- Organize their ratings into personalized **custom lists**
+**My Movies Lists** is a full-stack web application built with **React, Vite, and JavaScript** on the frontend and **Java Spring Boot** on the backend, using **MySQL** as the database. Motivated by my passion for movies and reviewing, this app enables users to explore a vast catalog of movies, view detailed information, rate films, and organize their ratings into personalized custom lists.
 
 ## Demo
 
@@ -29,7 +23,7 @@ Motivated by my passion for movies and reviewing, this app enables users to:
 
 - User registration & login with secure JWT authentication  
 - Movie search & detailed view powered by the OMDb API  
-- Spring Security to secure all API requests  
+- Stateless authentication securing all API requests with JWT via Spring Security
 - Responsive UI styled with MUI  
 - RESTful API for managing movie reviews & custom lists  
 
@@ -84,10 +78,10 @@ Go to [http://localhost:5173](http://localhost:5173) once both frontend and back
 
 ## Challenges & Learnings
 
-- Designed relational schemas and ER diagrams  
-- Built and tested REST APIs with Spring Boot  
-- Implemented secure JWT authentication  
-- Connected React frontend with Spring backend & MySQL database  
+- Gained hands-on experience designing databases using ER diagrams and relational schemas 
+- Developed RESTful APIs with Spring Boot and integrated them with a React frontend
+- Implemented JWT authentication using Spring Security for secure requests
+- Connected the frontend, backend, and database into a seamless full-stack workflow
 
 ## Future Improvements
 
