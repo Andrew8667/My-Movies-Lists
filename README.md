@@ -16,7 +16,7 @@
 | **Frontend**  | React, Vite, Material UI |
 | **Backend**   | Java, Spring Boot, Spring Security (JWT) |
 | **Database**  | MySQL (via MySQL Workbench) |
-| **Tools**     | IntelliJ IDEA, VSCode |
+| **Development Tools**     | IntelliJ IDEA, VSCode, GitHub |
 | **Build**     | Maven (backend), npm (frontend) |
 
 ## Core Features
