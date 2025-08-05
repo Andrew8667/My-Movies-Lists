@@ -23,7 +23,7 @@
 
 - User registration & login with secure JWT authentication  
 - Movie search & detailed view powered by the OMDb API  
-- Stateless authentication securing all API requests with JWT via Spring Security
+- Secure API endpoints using JWT via Spring Security
 - Responsive UI styled with MUI  
 - RESTful API for managing movie reviews & custom lists  
 
