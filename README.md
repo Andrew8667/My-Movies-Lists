@@ -49,8 +49,15 @@
 
 ```
 1. Open MySQL Workbench (or other client)
-2. Run: Movie Project/db/mymovieslists.sql
-3. This creates and populates the required tables
+2. Open the SQL script file located at:
+
+
+Movie Project/db/mymovieslists.sql
+
+
+(You can open this file in a text editor and copy its contents.)
+3. Paste the SQL script into a new query tab in MySQL Workbench.
+4. Execute the script to create and populate the necessary database tables.
 ```
 
 ### 3. Start the Frontend
@@ -67,7 +74,7 @@ Frontend will run at: [http://localhost:5173](http://localhost:5173)
 ```
 1. Open: Movie Project/mymovielist/src/main/resources/application.properties
 2. Set `spring.datasource.username` and `spring.datasource.password`
-3. Then run:
+3. From Movie Project/mymovielist run:
    mvn clean install
    mvn spring-boot:run
 ```
